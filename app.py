@@ -106,8 +106,8 @@ def generate_mock_datasets():
 # 💾 3. GITHUB DATA INGESTION & CACHING LAYER #
 # ============================================================================ #
 # ⚙️ TASK: Replace your-username and your-repo-name with your real GitHub details!
-GITHUB_USERNAME = "your-username"
-GITHUB_REPO = "your-repo-name"
+GITHUB_USERNAME = "lastknight97"
+GITHUB_REPO = "AI-Student-Performance-Advisor"
 GITHUB_BRANCH = "main"
 
 URL_SUBJ = f"https://githubusercontent.com{GITHUB_USERNAME}/{GITHUB_REPO}/{GITHUB_BRANCH}/data/Subject_Analytics_Dataset_200_Students.xlsx"
