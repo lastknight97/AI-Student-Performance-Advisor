@@ -121,7 +121,6 @@ def load_and_prepare_data():
             df_subj = pd.read_excel(file1_path)
             df_risk = pd.read_excel(file2_path)
             
-            # Formulating data-type guards: Normalize ID spaces to prevent string matching dropouts
             df_subj["Student_ID"] = df_subj["Student_ID"].astype(str).str.strip()
             df_risk["Student_ID"] = df_risk["Student_ID"].astype(str).str.strip()
             return df_subj, df_risk
@@ -155,7 +154,7 @@ class MLRiskEngine:
     def predict_risk(self, student_features_df):
         pred = self.model.predict(student_features_df[self.features])
         prob = self.model.predict_proba(student_features_df[self.features])
-        return pred[0], prob[0][1]
+        return pred, prob
 
     def get_feature_importance(self):
         importances = self.model.feature_importances__
@@ -187,7 +186,6 @@ selected_page = pd_st.sidebar.radio(
 pd_st.sidebar.markdown("---")
 pd_st.sidebar.markdown("### **Student Context Filter**")
 
-# Constructing data validation layer
 student_list = df_risk_raw[["Student_ID", "Student_Name"]].drop_duplicates().dropna()
 student_options = {f"{row['Student_ID']} - {row['Student_Name']}": str(row['Student_ID']) for _, row in student_list.iterrows()}
 
@@ -197,7 +195,6 @@ else:
     selected_student_label = pd_st.sidebar.selectbox("Active Student Profile Selection:", list(student_options.keys()))
     active_student_id = student_options[selected_student_label]
 
-    # Filtering contextual frame rows safely
     student_subjects = df_subject_raw[df_subject_raw["Student_ID"] == active_student_id].copy()
     student_risk_filtered = df_risk_raw[df_risk_raw["Student_ID"] == active_student_id]
 
@@ -207,7 +204,6 @@ else:
         student_meta = student_subjects.iloc[0]
         student_risk_profile = student_risk_filtered.iloc[0]
 
-        # Standardizing metric score totals
         student_subjects["Total_Score"] = (
             student_subjects["Final_Marks"].fillna(0) + 
             student_subjects["Midterm_Marks"].fillna(0) + 
@@ -220,5 +216,9 @@ else:
 
         # ============================================================================
         # 📋 PAGE 1: EXECUTIVE OVERVIEW
-# ============================================================================
+        # ============================================================================
         if selected_page == "📊 Executive Overview":
+            pd_st.markdown(f"<div class='main-title'>🎓 Student Performance Hub: {student_meta['Student_Name']}</div>", unsafe_allow_html=True)
+            pd_st.markdown("---")
+
+            col1, col2, col3, col4 = pd_st.columns(4)
