@@ -3,9 +3,9 @@ import streamlit as st
 
 
 st.set_page_config(
-    page_title="AI Student Performance Advisor",
-    page_icon="🎓",
-    layout="wide"
+    page_title="AI Student Performance Advisor",
+    page_icon="🎓",
+    layout="wide"
 )
 
 
