@@ -110,8 +110,8 @@ GITHUB_USERNAME = "lastknight97"
 GITHUB_REPO = "AI-Student-Performance-Advisor"
 GITHUB_BRANCH = "main"
 
-URL_SUBJ = f"https://github.com/{GITHUB_USERNAME}/{GITHUB_REPO}/{GITHUB_BRANCH}/data/Subject_Analytics_Dataset_200_Students.xlsx"
-URL_RISK = f"https://github.com/{GITHUB_USERNAME}/{GITHUB_REPO}/{GITHUB_BRANCH}/data/ML_Risk_Dataset_200_Students.xlsx"
+URL_SUBJ = f"https://githubusercontent.com{GITHUB_USERNAME}/{GITHUB_REPO}/{GITHUB_BRANCH}/data/Subject_Analytics_Dataset_200_Students.xlsx"
+URL_RISK = f"https://githubusercontent.com{GITHUB_USERNAME}/{GITHUB_REPO}/{GITHUB_BRANCH}/data/ML_Risk_Dataset_200_Students.xlsx"
 
 @pd_st.cache_data(ttl=3600)  # Caches remote data for 1 hour to prevent API throttling
 def load_data_from_github(url_subj, url_risk):
