@@ -1,6 +1,9 @@
 import streamlit as st
+
 import pandas as pd
+
 import plotly.express as px
+
 import plotly.graph_objects as go
 
 
@@ -693,27 +696,62 @@ Suggested Actions:
 
 # --------------------------------------------------
 
+
+
 elif page == "Explainable AI":
+
+
+
     st.subheader("🔍 Explainable AI")
+
+
+
     fig4 = px.bar(
+
         feature_df,
+
         x="Importance",
+
         y="Feature",
+
         orientation="h",
+
         color="Importance",
+
         title="Feature Importance"
+
     )
+
+
+
     st.plotly_chart(
+
         fig4,
+
         use_container_width=True
+
     )
+
+
+
     fig5 = px.pie(
+
         feature_df,
+
         values="Importance",
+
         names="Feature",
+
         hole=0.5
+
     )
-st.plotly_chart(
+
+
+
+    st.plotly_chart(
+
         fig5,
+
         use_container_width=True
+
     )
