@@ -1,754 +1,237 @@
-import streamlit as st
+import streamlit as pd_st
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+import os
 
-
-
-# --------------------------------------------------
-
-# PAGE CONFIG
-
-# --------------------------------------------------
-
-
-
-st.set_page_config(
-
-    page_title="AI Student Performance Advisor",
-
-    page_icon="🎓",
-
-    layout="wide"
-
+# ============================================================================
+# 🎨 1. APPLICATION & UI SETUP (EXECUTIVE SaaS DESIGN)
+# ============================================================================
+pd_st.set_page_config(
+    page_title="AI-Based Student Performance Advisor",
+    page_icon="🎓",
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-
-
-# --------------------------------------------------
-
-# CUSTOM STYLING
-
-# --------------------------------------------------
-
-
-
-st.markdown("""
-
+# Premium Global Design (SaaS Platform Look)
+CUSTOM_CSS = """
 <style>
-
-.main {
-
-    background-color: #f8fafc;
-
-}
-
-h1,h2,h3 {
-
-    color: #1e3a8a;
-
-}
-
-[data-testid="stMetric"] {
-
-    background-color: white;
-
-    padding: 15px;
-
-    border-radius: 12px;
-
-    border: 1px solid #e2e8f0;
-
-}
-
+    [data-testid="stMetricValue"] {
+        font-size: 1.8rem !important;
+        font-weight: 700 !important;
+        color: #1E3A8A !important;
+    }
+    .main-title {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #0F172A;
+        margin-bottom: 0.2rem;
+    }
+    .subtitle {
+        font-size: 1rem;
+        color: #64748B;
+        margin-bottom: 2rem;
+    }
+    .card {
+        background-color: #FFFFFF;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+        margin-bottom: 1.5rem;
+        border: 1px solid #F1F5F9;
+    }
+    .badge-no-risk {
+        background-color: #DCFCE7;
+        color: #15803D;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+    .badge-risk {
+        background-color: #FEE2E2;
+        color: #B91C1C;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+    .badge-neutral {
+        background-color: #F1F5F9;
+        color: #475569;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
 </style>
-
-""", unsafe_allow_html=True)
-
-
-
-# --------------------------------------------------
-
-# SAMPLE DATA
-
-# --------------------------------------------------
-
-
-
-student_data = {
-
-    "Student Name": "Aarav Sharma",
-
-    "Student ID": "S001",
-
-    "Department": "Computer Science",
-
-    "Semester": 5,
-
-    "Attendance": 88,
-
-    "Average": 82,
-
-    "Trend": "Improving",
-
-    "Risk": "Low",
-
-    "Study Hours": 12,
-
-    "Submission Rate": 96
-
-}
-
-
-
-subject_df = pd.DataFrame({
-
-    "Subject": [
-
-        "Programming",
-
-        "Mathematics",
-
-        "Physics",
-
-        "Chemistry",
-
-        "Database Systems"
-
-    ],
-
-    "Marks": [92, 84, 74, 69, 88],
-
-    "Attendance": [95, 88, 76, 72, 91]
-
-})
-
-
-
-trend_df = pd.DataFrame({
-
-    "Assessment": [
-
-        "Quiz 1",
-
-        "Quiz 2",
-
-        "Assignment",
-
-        "Midterm",
-
-        "Final"
-
-    ],
-
-    "Score": [68, 73, 80, 84, 89]
-
-})
-
-
-
-feature_df = pd.DataFrame({
-
-    "Feature": [
-
-        "Attendance",
-
-        "Quiz Scores",
-
-        "Assignments",
-
-        "Recent Performance",
-
-        "Missed Assessments"
-
-    ],
-
-    "Importance": [38, 20, 18, 14, 10]
-
-})
-
-
-
-# --------------------------------------------------
-
-# SIDEBAR
-
-# --------------------------------------------------
-
-
-
-st.sidebar.title("Navigation")
-
-
-
-page = st.sidebar.radio(
-
-    "Choose Page",
-
-    [
-
-        "Executive Overview",
-
-        "Subject Analytics",
-
-        "Performance Trends",
-
-        "Academic Risk",
-
-        "Strengths & Weaknesses",
-
-        "Recommendations",
-
-        "AI Advisor",
-
-        "Explainable AI"
-
-    ]
-
+"""
+pd_st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+
+# ============================================================================
+# 🧪 2. ROBUST DATA GENERATOR (FALLBACK FOR PRODUCTION STABILITY)
+# ============================================================================
+def generate_mock_datasets():
+    """Generates synthetic, deterministic structural dataset profiles matching the exact requirements."""
+    np.random.seed(42)
+    student_ids = [f"STU{str(i).zfill(3)}" for i in range(1, 201)]
+    names = [
+        "Liam Smith", "Olivia Nova", "Noah Vance", "Emma Roy", "Oliver King", "Ava Reed", "Elijah Ward",
+        "Charlotte Fox", "William Ross", "Sophia Bell", "James Cook", "Amelia Diaz", "Benjamin Cruz",
+        "Isabella Reyes", "Lucas Ortiz", "Mia Ramos", "Mason Ruiz", "Evelyn Gomez", "Ethan Flores", "Harper Perez"
+    ] * 10
+    departments = ["Computer Science", "Data Science", "Electrical Eng", "Mechanical Eng"] * 50
+    semesters = ["Semester 3", "Semester 5", "Semester 7"] * 67 + ["Semester 3", "Semester 5"]
+    subjects = ["Programming", "Mathematics", "Physics", "Chemistry", "Database Systems"]
+
+    # Dataset 1: Subject Analytics
+    sub_records = []
+    for idx, s_id in enumerate(student_ids):
+        for sub in subjects:
+            att = float(np.random.randint(65, 100))
+            qz = float(np.random.randint(10, 20))
+            asg = float(np.random.randint(12, 20))
+            mid = float(np.random.randint(15, 30))
+            fin = float(np.random.randint(30, 50))
+            # artificially degrade specific students to make analytics meaningful
+            if idx % 7 == 0:
+                att = float(np.random.randint(55, 75))
+                fin = float(np.random.randint(15, 35))
+            sub_records.append([s_id, names[idx], departments[idx], semesters[idx], sub, att, qz, asg, mid, fin])
+    
+    df1 = pd.DataFrame(sub_records, columns=[
+        "Student_ID", "Student_Name", "Department", "Semester", "Subject", 
+        "Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks"
+    ])
+
+    # Dataset 2: ML Risk Analysis
+    ml_records = []
+    for idx, s_id in enumerate(student_ids):
+        att_avg = df1[df1["Student_ID"] == s_id]["Attendance"].mean()
+        asg_avg = df1[df1["Student_ID"] == s_id]["Assignment_Score"].mean()
+        qz_avg = df1[df1["Student_ID"] == s_id]["Quiz_Score"].mean()
+        mid_avg = df1[df1["Student_ID"] == s_id]["Midterm_Marks"].mean()
+        fin_avg = df1[df1["Student_ID"] == s_id]["Final_Marks"].mean()
+        
+        internal_marks = float(mid_avg + qz_avg + asg_avg)
+        prev_sem = float(np.random.randint(60, 95))
+        recent_test = float(fin_avg * 2) # normalized approximate mapping
+        missed_asg = int(np.random.randint(0, 4) if att_avg > 75 else np.random.randint(2, 6))
+        
+        trend = "Improving" if recent_test > prev_sem else ("Declining" if recent_test < (prev_sem - 10) else "Stable")
+        hours = int(np.random.randint(10, 25) if att_avg > 75 else np.random.randint(4, 12))
+        sub_rate = float(np.clip((100 - (missed_asg * 10)), 50, 100))
+        participation = float(np.random.randint(60, 100) if att_avg > 80 else np.random.randint(40, 70))
+        
+        # Risk logical determination rules
+        risk = 0
+        if att_avg < 75 or internal_marks < 35 or missed_asg >= 3 or trend == "Declining":
+            risk = 1
+            
+        ml_records.append([
+            s_id, names[idx], att_avg, asg_avg, qz_avg, internal_marks, prev_sem,
+            recent_test, missed_asg, trend, hours, sub_rate, participation, risk
+        ])
+        
+    df2 = pd.DataFrame(ml_records, columns=[
+        "Student_ID", "Student_Name", "Attendance", "Assignment_Avg", "Quiz_Avg", "Internal_Marks",
+        "Previous_Sem_Avg", "Recent_Test_Avg", "Missed_Assessments", "Performance_Trend",
+        "Study_Hours_Per_Week", "Submission_Rate", "Class_Participation", "Academic_Risk"
+    ])
+    
+    return df1, df2
+
+# ============================================================================
+# 💾 3. DATA LOADING AND CACHING LAYER
+# ============================================================================
+@pd_st.cache_data
+def load_and_prepare_data():
+    file1_path = "data/Subject_Analytics_Dataset_200_Students.xlsx"
+    file2_path = "data/ML_Risk_Dataset_200_Students.xlsx"
+    
+    if os.path.exists(file1_path) and os.path.exists(file2_path):
+        try:
+            df_subj = pd.read_excel(file1_path)
+            df_risk = pd.read_excel(file2_path)
+            return df_subj, df_risk
+        except Exception as e:
+            pd_st.warning(f"Error reading Excel files: {e}. Generating live runtime sandbox metrics dataset instead.")
+            return generate_mock_datasets()
+    else:
+        return generate_mock_datasets()
+
+df_subject_raw, df_risk_raw = load_and_prepare_data()
+
+# ============================================================================
+# 🤖 4. MACHINE LEARNING RISK ENGINE
+# ============================================================================
+class MLRiskEngine:
+    def __init__(self, data):
+        self.data = data
+        self.model = RandomForestClassifier(n_estimators=100, random_state=42)
+        self.features = [
+            "Attendance", "Assignment_Avg", "Quiz_Avg", "Internal_Marks", 
+            "Previous_Sem_Avg", "Recent_Test_Avg", "Missed_Assessments", 
+            "Study_Hours_Per_Week", "Submission_Rate", "Class_Participation"
+        ]
+        self._train_model()
+
+    def _train_model(self):
+        X = self.data[self.features].copy()
+        y = self.data["Academic_Risk"].copy()
+        self.model.fit(X, y)
+
+    def predict_risk(self, student_features_df):
+        pred = self.model.predict(student_features_df[self.features])[0]
+        prob = self.model.predict_proba(student_features_df[self.features])[0]
+        return pred, prob[1]
+
+    def get_feature_importance(self):
+        importances = self.model.feature_importances__
+        return pd.DataFrame({
+            "Feature": [f.replace("_", " ") for f in self.features],
+            "Importance": importances
+        }).sort_values(by="Importance", ascending=True)
+
+risk_engine = MLRiskEngine(df_risk_raw)
+
+# ============================================================================
+# 🧭 5. SIDEBAR FILTER & ACADEMIC GLOBAL SELECTOR
+# ============================================================================
+pd_st.sidebar.image("https://flaticon.com", width=80)
+pd_st.sidebar.markdown("### **Navigation Workspace**")
+selected_page = pd_st.sidebar.radio(
+    "Go To Workspace:",
+    [
+        "📊 Executive Overview",
+        "📚 Subject Analytics",
+        "📈 Performance Trends",
+        "🚨 Academic Risk Analysis",
+        "🎯 Strengths & Weaknesses",
+        "💡 Recommendations",
+        "💬 AI Academic Advisor",
+        "🧠 Explainable AI (XAI)"
+    ]
 )
 
-
-
-# --------------------------------------------------
-
-# HEADER
-
-# --------------------------------------------------
-
-
-
-st.title("🎓 AI-Based Student Performance Advisor")
-
-st.caption(
-
-    "Educational Analytics • Academic Risk Assessment • Personalized Recommendations"
-
-)
-
-
-
-# --------------------------------------------------
-
-# EXECUTIVE OVERVIEW
-
-# --------------------------------------------------
-
-
-
-if page == "Executive Overview":
-
-
-
-    st.subheader("Executive Overview")
-
-
-
-    st.info(
-
-        f"""
-
-Student Name: {student_data['Student Name']}
-
-
-
-Student ID: {student_data['Student ID']}
-
-
-
-Department: {student_data['Department']}
-
-
-
-Semester: {student_data['Semester']}
-
-"""
-
-    )
-
-
-
-    c1, c2, c3 = st.columns(3)
-
-
-
-    c1.metric("Attendance", f"{student_data['Attendance']}%")
-
-    c2.metric("Average Score", student_data["Average"])
-
-    c3.metric("Risk Status", student_data["Risk"])
-
-
-
-    c4, c5, c6 = st.columns(3)
-
-
-
-    c4.metric("Performance Trend", student_data["Trend"])
-
-    c5.metric("Study Hours", student_data["Study Hours"])
-
-    c6.metric(
-
-        "Submission Rate",
-
-        f"{student_data['Submission Rate']}%"
-
-    )
-
-
-
-# --------------------------------------------------
-
-# SUBJECT ANALYTICS
-
-# --------------------------------------------------
-
-
-
-elif page == "Subject Analytics":
-
-
-
-    st.subheader("📚 Subject Analytics")
-
-
-
-    fig1 = px.bar(
-
-        subject_df,
-
-        x="Subject",
-
-        y="Marks",
-
-        color="Marks",
-
-        title="Subject-wise Performance"
-
-    )
-
-
-
-    st.plotly_chart(fig1, use_container_width=True)
-
-
-
-    radar = go.Figure()
-
-
-
-    radar.add_trace(
-
-        go.Scatterpolar(
-
-            r=subject_df["Marks"],
-
-            theta=subject_df["Subject"],
-
-            fill="toself"
-
-        )
-
-    )
-
-
-
-    radar.update_layout(
-
-        polar=dict(
-
-            radialaxis=dict(
-
-                visible=True,
-
-                range=[0, 100]
-
-            )
-
-        ),
-
-        showlegend=False
-
-    )
-
-
-
-    st.plotly_chart(
-
-        radar,
-
-        use_container_width=True
-
-    )
-
-
-
-    col1, col2 = st.columns(2)
-
-
-
-    col1.success("🏆 Strongest Subject: Programming")
-
-    col2.error("⚠ Weakest Subject: Chemistry")
-
-
-
-# --------------------------------------------------
-
-# PERFORMANCE TRENDS
-
-# --------------------------------------------------
-
-
-
-elif page == "Performance Trends":
-
-
-
-    st.subheader("📈 Performance Trends")
-
-
-
-    c1, c2, c3 = st.columns(3)
-
-
-
-    c1.metric("Previous Average", "72")
-
-    c2.metric("Current Average", "82")
-
-    c3.metric("Improvement", "+10")
-
-
-
-    fig2 = px.line(
-
-        trend_df,
-
-        x="Assessment",
-
-        y="Score",
-
-        markers=True
-
-    )
-
-
-
-    st.plotly_chart(fig2, use_container_width=True)
-
-
-
-    fig3 = px.area(
-
-        trend_df,
-
-        x="Assessment",
-
-        y="Score"
-
-    )
-
-
-
-    st.plotly_chart(fig3, use_container_width=True)
-
-
-
-# --------------------------------------------------
-
-# ACADEMIC RISK
-
-# --------------------------------------------------
-
-
-
-elif page == "Academic Risk":
-
-
-
-    st.subheader("⚠ Academic Risk Analysis")
-
-
-
-    risk_gauge = go.Figure(
-
-        go.Indicator(
-
-            mode="gauge+number",
-
-            value=25,
-
-            title={"text": "Risk Score"},
-
-            gauge={
-
-                "axis": {"range": [0, 100]}
-
-            }
-
-        )
-
-    )
-
-
-
-    st.plotly_chart(
-
-        risk_gauge,
-
-        use_container_width=True
-
-    )
-
-
-
-    st.success("Current Status: LOW RISK")
-
-
-
-    st.markdown("""
-
-### Contributing Factors
-
-
-
-✅ High Attendance
-
-
-
-✅ Good Submission Rate
-
-
-
-⚠ Physics Performance
-
-
-
-⚠ Chemistry Performance
-
-""")
-
-
-
-# --------------------------------------------------
-
-# STRENGTHS & WEAKNESSES
-
-# --------------------------------------------------
-
-
-
-elif page == "Strengths & Weaknesses":
-
-
-
-    st.subheader("💪 Strengths & Weaknesses")
-
-
-
-    col1, col2 = st.columns(2)
-
-
-
-    with col1:
-
-        st.success("""
-
-✅ Programming
-
-
-
-✅ Mathematics
-
-
-
-✅ Assignment Completion
-
-
-
-✅ Class Participation
-
-""")
-
-
-
-    with col2:
-
-        st.error("""
-
-⚠ Physics
-
-
-
-⚠ Chemistry
-
-
-
-⚠ Exam Preparation
-
-""")
-
-
-
-# --------------------------------------------------
-
-# RECOMMENDATIONS
-
-# --------------------------------------------------
-
-
-
-elif page == "Recommendations":
-
-
-
-    st.subheader("💡 Personalized Recommendations")
-
-
-
-    recommendations = [
-
-        "Increase attendance above 85%",
-
-        "Improve Physics performance",
-
-        "Revise Chemistry weekly",
-
-        "Maintain strong Programming performance",
-
-        "Add 3 extra study hours each week"
-
-    ]
-
-
-
-    for item in recommendations:
-
-        st.info(item)
-
-
-
-# --------------------------------------------------
-
-# AI ADVISOR
-
-# --------------------------------------------------
-
-
-
-elif page == "AI Advisor":
-
-
-
-    st.subheader("🤖 AI Academic Advisor")
-
-
-
-    st.chat_message("user").write(
-
-        "Which subject should I focus on?"
-
-    )
-
-
-
-    st.chat_message("assistant").write(
-
-        """
-
-Physics requires additional attention because
-
-it currently has the lowest marks among all subjects.
-
-
-
-Suggested Actions:
-
-
-
-• Weekly revision
-
-
-
-• Mock quizzes
-
-
-
-• Practice assignments
-
-
-
-• Additional study hours
-
-"""
-
-    )
-
-
-
-# --------------------------------------------------
-
-# EXPLAINABLE AI
-
-# --------------------------------------------------
-
-
-
-elif page == "Explainable AI":
-
-
-
-    st.subheader("🔍 Explainable AI")
-
-
-
-    fig4 = px.bar(
-
-        feature_df,
-
-        x="Importance",
-
-        y="Feature",
-
-        orientation="h",
-
-        color="Importance",
-
-        title="Feature Importance"
-
-    )
-
-
-
-    st.plotly_chart(
-
-        fig4,
-
-        use_container_width=True
-
-    )
-
-
-
-    fig5 = px.pie(
-
-        feature_df,
-
-        values="Importance",
-
-        names="Feature",
-
-        hole=0.5
-
-    )
-
-
-
-    st.plotly_chart(
-
-        fig5,
-
-        use_container_width=True
-
-    )
+pd_st.sidebar.markdown("---")
+pd_st.sidebar.markdown("### **Student Context Filter**")
+
+# Standard Uniform Dropdown Selectors
+student_list = df_risk_raw[["Student_ID", "Student_Name"]].drop_duplicates()
+student_options = {f"{row['Student_ID']} - {row['Student_Name']}": row['Student_ID'] for _, row in student_list.iterrows()}
+selected_student_label = pd_st.sidebar.selectbox("Active Student Profile Selection:", list(student_options.keys()))
+active_student_id = student_options[selected_student_label]
+
+# Isolate contextual records for views
+student_meta = df_subject_raw[df_subject_raw["Student_ID"] == active_student_id].iloc[0]
+student_subjects = df_subject_raw[df_subject_raw["Student_ID"] == active_student_id]
+student_risk_profile = df_risk_raw[df_risk_raw["Student_ID"] == active_student_id].iloc[0]
+
+# Pre-calculations for logical rules
+student_subjects = student_subjects.copy()
+student_subjects["Total_Score"] = student_subjects["Final_Marks"] + student_subjects["Midterm_Marks"] + student_subjects["Assignment_Score"] + student_subjects["Quiz_Score"]
