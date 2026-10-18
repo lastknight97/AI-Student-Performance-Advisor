@@ -85,6 +85,17 @@ def load_and_evaluate_data():
     return min(risk_points / 5.0, 1.0)
 
   df["Risk_Score"] = df.apply(compute_academic_risk, axis=1)
+
+  # Translate numbers to clear teacher-friendly risk levels
+  def get_risk_label(score):
+    if score >= 0.5:
+      return "High Risk"
+    elif score >= 0.2:
+      return "Moderate Risk"
+    else:
+      return "Low Risk"
+
+  df["Risk_Level"] = df["Risk_Score"].apply(get_risk_label)
   
   if "performance_trend" not in df.columns:
     df["performance_trend"] = np.where(df["Final_Marks"] >= df["Midterm_Marks"], "improving", "declining")
@@ -118,6 +129,7 @@ if selected_section == "📊 Overview":
   avg_attendance = df["Attendance"].mean()
   avg_final = df["Final_Marks"].mean()
   
+  # Get highest risk category per student for overview counts
   student_max_risk = df.groupby(["Student_ID", "Student_Name"])["Risk_Score"].max().reset_index()
   high_risk_count = int((student_max_risk["Risk_Score"] >= 0.5).sum())
   
@@ -167,12 +179,10 @@ if selected_section == "📊 Overview":
   st.markdown("### 🚨 Urgent Action Queue")
   
   top_risk_table = df[df["Risk_Score"] >= 0.5][[
-      "Student_ID", "Student_Name", "Department", "Subject", "Attendance", "Final_Marks", "Risk_Score"
-  ]].sort_values(by="Risk_Score", ascending=False).head(10)
+      "Student_ID", "Student_Name", "Department", "Subject", "Attendance", "Final_Marks", "Risk_Level"
+  ]].sort_values(by="Attendance", ascending=True).head(10)
   
-  top_risk_table["Risk Index (%)"] = (top_risk_table["Risk_Score"] * 100).round(1)
-  top_risk_table = top_risk_table.drop(columns=["Risk_Score"])
-  
+  top_risk_table = top_risk_table.rename(columns={"Risk_Level": "Status"})
   st.dataframe(top_risk_table, use_container_width=True)
 
 # ==========================================
@@ -215,22 +225,21 @@ elif selected_section == "👤 Student Profile":
   p_attendance = student_df["Attendance"].mean()
   p_final = student_df["Final_Marks"].mean()
   p_missed = student_df["missed_assessments"].sum()
-  p_max_risk = float(student_df["Risk_Score"].max())
+  p_max_risk_label = student_df["Risk_Level"].iloc[0]
   
   m1.metric("Attendance Rate", f"{p_attendance:.1f}%")
   m2.metric("Mean Final Marks", f"{p_final:.1f}")
   m3.metric("Est. Missed Tasks", int(p_missed))
-  m4.metric("Max Risk Factor", f"{p_max_risk:.2f}", delta="At Risk" if p_max_risk >= 0.5 else "Stable", delta_color="inverse")
+  m4.metric("Overall Academic Status", p_max_risk_label, delta="Needs Attention" if p_max_risk_label == "High Risk" else "Stable", delta_color="inverse")
 
   st.markdown("---")
   st.subheader("📚 Subject Performance Matrix")
   
   display_df = student_df[[
       "Subject", "Attendance", "Quiz_Score", "Assignment_Score", 
-      "Midterm_Marks", "Final_Marks", "performance_trend", "Risk_Score"
+      "Midterm_Marks", "Final_Marks", "performance_trend", "Risk_Level"
   ]].copy()
-  display_df["Risk Score"] = display_df["Risk_Score"].apply(lambda x: f"{x:.2f}")
-  display_df = display_df.drop(columns=["Risk_Score"]).sort_values(by="Final_Marks", ascending=True)
+  display_df = display_df.rename(columns={"Risk_Level": "Risk Status"}).sort_values(by="Final_Marks", ascending=True)
 
   st.dataframe(display_df, use_container_width=True)
 
@@ -262,13 +271,15 @@ elif selected_section == "👤 Student Profile":
   st.markdown("---")
   st.subheader("💡 AI Advisor Intervention Notes")
 
-  def generate_recommendation(row, risk_score):
+  def generate_recommendation(row, risk_level):
     notes = []
     subj = row["Subject"]
-    if risk_score >= 0.5:
-      notes.append(f"⚠️ **{subj} requires urgent attention** (Risk Score: {risk_score:.2f}).")
+    if risk_level == "High Risk":
+      notes.append(f"⚠️ **{subj} requires urgent attention** (Status: High Risk).")
+    elif risk_level == "Moderate Risk":
+      notes.append(f"⚠️ **{subj} needs monitoring** (Status: Moderate Risk).")
     else:
-      notes.append(f"✅ **{subj} is performing stably** (Risk Score: {risk_score:.2f}).")
+      notes.append(f"✅ **{subj} is performing well** (Status: Low Risk).")
     
     if row["Final_Marks"] < 50:
       notes.append(f"Final marks are low ({row['Final_Marks']}); recommend mandatory tutoring.")
@@ -277,9 +288,9 @@ elif selected_section == "👤 Student Profile":
     return " ".join(notes)
 
   for idx, row in student_df.iterrows():
-    risk_score = row["Risk_Score"]
-    with st.expander(f"Intervention Plan: {row['Subject']} (Risk Index: {risk_score:.2f})"):
-      st.markdown(generate_recommendation(row, risk_score))
+    risk_lvl = row["Risk_Level"]
+    with st.expander(f"Intervention Plan: {row['Subject']} (Status: {risk_lvl})"):
+      st.markdown(generate_recommendation(row, risk_lvl))
 
 # ==========================================
 # SECTION 3: ANALYTICS
@@ -323,7 +334,6 @@ elif selected_section == "📈 Analytics":
   df["Status"] = np.where(df["Risk_Score"] >= 0.5, "At Risk", "Stable")
   comparison_df = df[["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks", "Status"]].groupby("Status").mean().reset_index()
   
-  # Melt the dataframe for easy plotting
   melted_comp = comparison_df.melt(id_vars="Status", var_name="Metric", value_name="Average_Score")
 
   fig_comp = px.bar(
