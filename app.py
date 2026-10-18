@@ -89,11 +89,11 @@ def load_and_evaluate_data():
   # Translate numbers to clear teacher-friendly risk levels
   def get_risk_label(score):
     if score >= 0.5:
-      return "High Risk"
+      return "High"
     elif score >= 0.2:
-      return "Moderate Risk"
+      return "Moderate"
     else:
-      return "Low Risk"
+      return "Low"
 
   df["Risk_Level"] = df["Risk_Score"].apply(get_risk_label)
   
