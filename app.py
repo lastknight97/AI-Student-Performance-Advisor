@@ -316,23 +316,23 @@ elif selected_section == "📈 Analytics":
     st.plotly_chart(fig_subj, use_container_width=True)
 
   st.markdown("---")
-  st.subheader("📊 What Drives Academic Risk? (Factor Impact Analysis)")
-  
-  corr_with_risk = (
-      df[["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks"]]
-      .corrwith(df["Risk_Score"])
-      .reset_index()
-  )
-  corr_with_risk.columns = ["Academic_Factor", "Correlation_With_Risk"]
-  corr_with_risk = corr_with_risk.sort_values(by="Correlation_With_Risk", ascending=True)
+  st.subheader("📊 What Drives Academic Risk? (Average Comparison)")
+  st.markdown("Comparing the average scores of stable students versus those flagged at risk.")
 
-  fig_corr = px.bar(
-      corr_with_risk,
-      x="Correlation_With_Risk",
-      y="Academic_Factor",
-      orientation="h",
-      title="How Each Metric Affects Student Risk",
-      color="Correlation_With_Risk",
-      color_continuous_scale="RdBu"
+  # Group data by risk status and get averages for each metric
+  df["Status"] = np.where(df["Risk_Score"] >= 0.5, "At Risk", "Stable")
+  comparison_df = df[["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks", "Status"]].groupby("Status").mean().reset_index()
+  
+  # Melt the dataframe for easy plotting
+  melted_comp = comparison_df.melt(id_vars="Status", var_name="Metric", value_name="Average_Score")
+
+  fig_comp = px.bar(
+      melted_comp,
+      x="Metric",
+      y="Average_Score",
+      color="Status",
+      barmode="group",
+      title="Average Performance: Stable vs. At-Risk Students",
+      color_discrete_map={"At Risk": "#ef4444", "Stable": "#10b981"}
   )
-  st.plotly_chart(fig_corr, use_container_width=True)
+  st.plotly_chart(fig_comp, use_container_width=True)
