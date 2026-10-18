@@ -19,14 +19,14 @@ st.set_page_config(
 # --- Data Loading & Model Training Pipeline ---
 @st.cache_resource
 def load_data_and_train_model():
-  csv_path = "data/Subject_Analytics_Dataset_200_Students.xlsx"
+  excel_path = "data/Subject_Analytics_Dataset_200_Students.xlsx"
   
-  if os.path.exists(csv_path):
-    df = pd.read_csv(csv_path)
+  if os.path.exists(excel_path):
+    df = pd.read_excel(excel_path)
   else:
     st.error(
-        "⚠️ 'student_performance.csv' not found in the root directory. Please upload "
-        "your 200-student dataset matching the required schema."
+        f"⚠️ '{excel_path}' not found in the repository. Please verify that the "
+        "file exists in the 'data/' folder."
     )
     st.stop()
 
