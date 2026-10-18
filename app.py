@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -34,8 +35,12 @@ st.markdown("""
 # --- Data Loading & Machine Learning Risk Engine ---
 @st.cache_resource
 def load_and_evaluate_data():
-  excel_path = "Subject_Analytics_Dataset_200_Students.xlsx"
+  excel_path = "data/Subject_Analytics_Dataset_200_Students.xlsx"
   
+  if not os.path.exists(excel_path):
+    st.error(f"⚠️ Excel dataset not found at '{excel_path}'. Please ensure the file is placed inside the 'data' folder.")
+    st.stop()
+
   try:
     df = pd.read_excel(excel_path)
   except Exception as e:
@@ -62,8 +67,6 @@ def load_and_evaluate_data():
   feature_cols = ["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks"]
   X = df[feature_cols]
 
-  # Generate synthetic training targets based on overall academic performance distribution for ML training
-  # (This serves as the target variable for our supervised models)
   composite_score = (X["Attendance"] * 0.3) + (X["Final_Marks"] * 0.4) + (X["Midterm_Marks"] * 0.3)
   
   def get_target_label(score):
@@ -82,10 +85,10 @@ def load_and_evaluate_data():
   df["Baseline_Pred"] = lr_baseline.predict(X)
 
   # 2. Main Model: Random Forest Classifier
+  global rf_model
   rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
   rf_model.fit(X, y)
 
-  # Predict risk categories and probabilities using the Random Forest model
   df["Risk_Level"] = rf_model.predict(X)
   
   class_labels = list(rf_model.classes_)
@@ -337,4 +340,35 @@ elif selected_section == "📈 Analytics":
       color_discrete_map={"At Risk": "#ef4444", "Stable": "#10b981"}
   )
   st.plotly_chart(fig_comp, use_container_width=True)
+
+  # --- Feature Importance Visualization ---
+  st.markdown("---")
+  st.subheader("🔍 AI Model Insights: What the Model Weighs Most")
+  st.markdown("This chart shows which academic factors the Random Forest model relies on most heavily to determine student risk levels.")
+
+  feature_importances = pd.DataFrame({
+      "Academic_Factor": ["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks"],
+      "Importance": rf_model.feature_importances_
+  }).sort_values(by="Importance", ascending=True)
+
+  feature_labels = {
+      "Attendance": "Attendance Rate",
+      "Quiz_Score": "Quiz Scores",
+      "Assignment_Score": "Assignment Scores",
+      "Midterm_Marks": "Midterm Exam Marks",
+      "Final_Marks": "Final Exam Marks"
+  }
+  feature_importances["Friendly_Name"] = feature_importances["Academic_Factor"].map(feature_labels)
+
+  fig_importance = px.bar(
+      feature_importances,
+      x="Importance",
+      y="Friendly_Name",
+      orientation="h",
+      title="Relative Importance of Academic Metrics in Risk Evaluation",
+      color="Importance",
+      color_continuous_scale="Blues"
+  )
+  fig_importance.update_layout(xaxis_title="Impact Weight", yaxis_title="Academic Metric")
+  st.plotly_chart(fig_importance, use_container_width=True)
     
