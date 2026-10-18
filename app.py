@@ -17,16 +17,20 @@ st.set_page_config(
     layout="wide",
 )
 
-# --- Custom CSS for CRM Styling ---
+# --- Custom CSS for CRM Styling & Fixing Text Contrast ---
 st.markdown("""
     <style>
         .main { background-color: #f8f9fa; }
         .metric-card {
             background-color: #ffffff;
-            padding: 20px;
+            padding: 22px;
             border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            border-left: 5px solid #4f46e5;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+            border-left: 6px solid #4f46e5;
+            margin-bottom: 20px;
+        }
+        .metric-card h2, .metric-card p, .metric-card b {
+            color: #1f2937 !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -215,11 +219,18 @@ with tab2:
 
   student_df = df[df["Student_ID"] == selected_student_id]
   student_name = student_df["Student_Name"].iloc[0]
+  student_department = student_df["Department"].iloc[0]
+  student_semester = student_df["Semester"].iloc[0]
+  
+  # Gather all courses/subjects chosen by this student
+  courses_chosen = ", ".join(student_df["Subject"].tolist())
 
+  # CRM Profile Header Card with Visible Dark Text & Complete Student Details
   st.markdown(f"""
       <div class='metric-card'>
-          <h2>👤 Profile Dossier: {student_name} ({selected_student_id})</h2>
-          <p><b>Student ID:</b> {selected_student_id} | <b>Student Name:</b> {student_name} | <b>Department:</b> {student_df['Department'].iloc[0]} | <b>Semester:</b> {student_df['Semester'].iloc[0]}</p>
+          <h2 style='color: #1f2937 !important; margin-bottom: 8px;'>👤 Profile Dossier: {student_name}</h2>
+          <p style='color: #4b5563 !important; font-size: 16px; margin: 4px 0;'><b>Student ID:</b> {selected_student_id} &nbsp;|&nbsp; <b>Department:</b> {student_department} &nbsp;|&nbsp; <b>Semester:</b> {student_semester}</p>
+          <p style='color: #4b5563 !important; font-size: 16px; margin: 4px 0;'><b>Courses Chosen:</b> {courses_chosen}</p>
       </div>
   """, unsafe_allow_html=True)
   st.markdown("")
@@ -347,12 +358,5 @@ with tab3:
   ).sort_values(by="Importance", ascending=False)
 
   fig_imp = px.bar(
-      feat_imp_df.head(10),
-      x="Importance",
-      y="Feature",
-      orientation="h",
-      title="Top 10 Feature Importances Driving CRM Risk Engine",
-  )
-  fig_imp.update_layout(yaxis={"categoryorder": "total ascending"})
-  st.plotly_chart(fig_imp, use_container_width=True)
+      feat_imp_df.head(1
     
