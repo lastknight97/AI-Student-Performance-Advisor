@@ -85,7 +85,6 @@ def load_and_evaluate_data():
   df["Baseline_Pred"] = lr_baseline.predict(X)
 
   # 2. Main Model: Random Forest Classifier
-  global rf_model
   rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
   rf_model.fit(X, y)
 
@@ -100,9 +99,10 @@ def load_and_evaluate_data():
   if "missed_assessments" not in df.columns:
     df["missed_assessments"] = np.where(df["Attendance"] < 75, 2, 0)
 
-  return df
+  return df, rf_model
 
-df = load_and_evaluate_data()
+# Load both df and rf_model correctly
+df, rf_model = load_and_evaluate_data()
 
 # --- Sidebar Navigation (Sections) ---
 st.sidebar.title("🎓 Navigation")
@@ -371,4 +371,3 @@ elif selected_section == "📈 Analytics":
   )
   fig_importance.update_layout(xaxis_title="Impact Weight", yaxis_title="Academic Metric")
   st.plotly_chart(fig_importance, use_container_width=True)
-    
