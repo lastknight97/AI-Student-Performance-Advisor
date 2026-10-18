@@ -103,9 +103,6 @@ selected_section = st.sidebar.radio(
     ["📊 Overview", "👤 Student Profile", "📈 Analytics"]
 )
 
-st.sidebar.markdown("---")
-st.sidebar.info("💡 **Why Risk Indices?** Risk metrics help educators identify struggling students early for proactive remediation.")
-
 # ==========================================
 # SECTION 1: OVERVIEW
 # ==========================================
