@@ -1,14 +1,9 @@
 import os
-import joblib
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -35,10 +30,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- Data Loading & Preprocessing Pipeline ---
+# --- Data Loading & Deterministic Rule Engine ---
 @st.cache_resource
-def load_data_and_train_model():
-  # Check multiple potential paths for the Excel file
+def load_and_evaluate_data():
   possible_paths = [
       "data/Subject_Analytics_Dataset_200_Students.xlsx",
       "Subject_Analytics_Dataset_200_Students.xlsx"
@@ -76,67 +70,40 @@ def load_data_and_train_model():
     st.error(f"❌ Missing columns in Excel file: {missing_cols}")
     st.stop()
 
-  # Dynamic Risk Label & Proxy Feature Generation
-  if "risk" not in df.columns:
-    df["risk"] = (
-        (df["Final_Marks"] < 50) | 
-        (df["Attendance"] < 65) | 
-        (df["Assignment_Score"] < 50)
-    ).astype(int)
+  # --- Deterministic Academic Rule Engine ---
+  # Computes risk score based on rule thresholds instead of black-box ML
+  def compute_academic_risk(row):
+    risk_points = 0
+    if row["Attendance"] < 65:
+      risk_points += 2
+    if row["Final_Marks"] < 50:
+      risk_points += 2
+    if row["Assignment_Score"] < 50:
+      risk_points += 1
+    if row["Midterm_Marks"] < 50:
+      risk_points += 1
+    
+    # Normalized risk index between 0.0 and 1.0
+    return min(risk_points / 5.0, 1.0)
 
-  if "previous_avg" not in df.columns:
-    df["previous_avg"] = (df["Midterm_Marks"] + df["Quiz_Score"]) / 2
-  if "recent_avg" not in df.columns:
-    df["recent_avg"] = (df["Final_Marks"] + df["Assignment_Score"]) / 2
+  df["Risk_Score"] = df.apply(compute_academic_risk, axis=1)
+  
+  # Proxy metrics for charts
   if "performance_trend" not in df.columns:
     df["performance_trend"] = np.where(df["Final_Marks"] >= df["Midterm_Marks"], "improving", "declining")
   if "missed_assessments" not in df.columns:
     df["missed_assessments"] = np.where(df["Attendance"] < 75, 2, 0)
 
-  feature_cols = [
-      "Attendance", "Assignment_Score", "Quiz_Score", "Midterm_Marks", 
-      "Final_Marks", "previous_avg", "recent_avg", "missed_assessments", 
-      "Subject", "Department"
-  ]
-  
-  X = df[feature_cols]
-  y = df["risk"]
+  return df
 
-  numeric_features = [
-      "Attendance", "Assignment_Score", "Quiz_Score", "Midterm_Marks", 
-      "Final_Marks", "previous_avg", "recent_avg", "missed_assessments"
-  ]
-  categorical_features = ["Subject", "Department"]
-
-  preprocessor = ColumnTransformer(
-      transformers=[
-          ("num", StandardScaler(), numeric_features),
-          ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_features),
-      ]
-  )
-
-  pipeline = Pipeline(
-      steps=[
-          ("preprocessor", preprocessor),
-          ("classifier", RandomForestClassifier(n_estimators=100, random_state=42)),
-      ]
-  )
-  
-  pipeline.fit(X, y)
-  
-  # Compute Risk Probabilities for all rows
-  df["Risk_Probability"] = pipeline.predict_proba(X)[:, 1]
-  return df, pipeline
-
-# Load data and trained model
-df, model = load_data_and_train_model()
+df = load_and_evaluate_data()
 
 # --- Top Header ---
 st.title("🎓 AI Student Performance Advisor")
-st.markdown("Student telemetry tracking, predictive risk scoring, and automated intervention guidance.")
+st.markdown("Student telemetry tracking, rule-based risk evaluation, and automated academic intervention guidance.")
 st.markdown("---")
 
-# Brief, Clean Tab Layout
+# Clean Tab Layout
 tab1, tab2, tab3 = st.tabs([
     "📊 Overview", 
     "👤 Student Profile", 
@@ -154,8 +121,8 @@ with tab1:
   avg_attendance = df["Attendance"].mean()
   avg_final = df["Final_Marks"].mean()
   
-  student_max_risk = df.groupby(["Student_ID", "Student_Name"])["Risk_Probability"].max().reset_index()
-  high_risk_count = int((student_max_risk["Risk_Probability"] >= 0.5).sum())
+  student_max_risk = df.groupby(["Student_ID", "Student_Name"])["Risk_Score"].max().reset_index()
+  high_risk_count = int((student_max_risk["Risk_Score"] >= 0.5).sum())
   
   col1.metric("Active Students", f"{total_students}")
   col2.metric("Avg Attendance", f"{avg_attendance:.1f}%")
@@ -169,7 +136,7 @@ with tab1:
   with c1:
     st.markdown("#### Risk Distribution")
     risk_df = student_max_risk.copy()
-    risk_df["Status"] = np.where(risk_df["Risk_Probability"] >= 0.5, "At Risk", "Stable")
+    risk_df["Status"] = np.where(risk_df["Risk_Score"] >= 0.5, "At Risk", "Stable")
     status_counts = risk_df["Status"].value_counts().reset_index()
     status_counts.columns = ["Status", "Count"]
     
@@ -186,7 +153,7 @@ with tab1:
   with c2:
     st.markdown("#### Risk Count by Department")
     dept_risk = df.copy()
-    dept_risk["Is_At_Risk"] = dept_risk["Risk_Probability"] >= 0.5
+    dept_risk["Is_At_Risk"] = dept_risk["Risk_Score"] >= 0.5
     dept_summary = dept_risk.groupby("Department")["Is_At_Risk"].sum().reset_index()
     
     fig_bar = px.bar(
@@ -202,12 +169,12 @@ with tab1:
   st.markdown("---")
   st.markdown("### 🚨 Urgent Action Queue")
   
-  top_risk_table = df[df["Risk_Probability"] >= 0.5][[
-      "Student_ID", "Student_Name", "Department", "Subject", "Attendance", "Final_Marks", "Risk_Probability"
-  ]].sort_values(by="Risk_Probability", ascending=False).head(10)
+  top_risk_table = df[df["Risk_Score"] >= 0.5][[
+      "Student_ID", "Student_Name", "Department", "Subject", "Attendance", "Final_Marks", "Risk_Score"
+  ]].sort_values(by="Risk_Score", ascending=False).head(10)
   
-  top_risk_table["Risk Score (%)"] = (top_risk_table["Risk_Probability"] * 100).round(1)
-  top_risk_table = top_risk_table.drop(columns=["Risk_Probability"])
+  top_risk_table["Risk Index (%)"] = (top_risk_table["Risk_Score"] * 100).round(1)
+  top_risk_table = top_risk_table.drop(columns=["Risk_Score"])
   
   st.dataframe(top_risk_table, use_container_width=True)
 
@@ -246,7 +213,7 @@ with tab2:
   p_attendance = student_df["Attendance"].mean()
   p_final = student_df["Final_Marks"].mean()
   p_missed = student_df["missed_assessments"].sum()
-  p_max_risk = float(student_df["Risk_Probability"].max())
+  p_max_risk = float(student_df["Risk_Score"].max())
   
   m1.metric("Attendance Rate", f"{p_attendance:.1f}%")
   m2.metric("Mean Final Marks", f"{p_final:.1f}")
@@ -258,10 +225,10 @@ with tab2:
   
   display_df = student_df[[
       "Subject", "Attendance", "Quiz_Score", "Assignment_Score", 
-      "Midterm_Marks", "Final_Marks", "performance_trend", "Risk_Probability"
+      "Midterm_Marks", "Final_Marks", "performance_trend", "Risk_Score"
   ]].copy()
-  display_df["Risk Score"] = display_df["Risk_Probability"].apply(lambda x: f"{x:.2f}")
-  display_df = display_df.drop(columns=["Risk_Probability"]).sort_values(by="Final_Marks", ascending=True)
+  display_df["Risk Score"] = display_df["Risk_Score"].apply(lambda x: f"{x:.2f}")
+  display_df = display_df.drop(columns=["Risk_Score"]).sort_values(by="Final_Marks", ascending=True)
 
   st.dataframe(display_df, use_container_width=True)
 
@@ -293,13 +260,13 @@ with tab2:
   st.markdown("---")
   st.subheader("💡 AI Advisor Intervention Notes")
 
-  def generate_recommendation(row, prob):
+  def generate_recommendation(row, risk_score):
     notes = []
     subj = row["Subject"]
-    if prob >= 0.5:
-      notes.append(f"⚠️ **{subj} requires urgent attention** (Risk Score: {prob:.2f}).")
+    if risk_score >= 0.5:
+      notes.append(f"⚠️ **{subj} requires urgent attention** (Risk Score: {risk_score:.2f}).")
     else:
-      notes.append(f"✅ **{subj} is performing stably** (Risk Score: {prob:.2f}).")
+      notes.append(f"✅ **{subj} is performing stably** (Risk Score: {risk_score:.2f}).")
     
     if row["Final_Marks"] < 50:
       notes.append(f"Final marks are low ({row['Final_Marks']}); recommend mandatory tutoring.")
@@ -308,9 +275,9 @@ with tab2:
     return " ".join(notes)
 
   for idx, row in student_df.iterrows():
-    prob = row["Risk_Probability"]
-    with st.expander(f"Intervention Dossier: {row['Subject']} (Risk Index: {prob:.2f})"):
-      st.markdown(generate_recommendation(row, prob))
+    risk_score = row["Risk_Score"]
+    with st.expander(f"Intervention Dossier: {row['Subject']} (Risk Index: {risk_score:.2f})"):
+      st.markdown(generate_recommendation(row, risk_score))
 
 # ==========================================
 # TAB 3: ANALYTICS
@@ -345,32 +312,17 @@ with tab3:
     st.plotly_chart(fig_subj, use_container_width=True)
 
   st.markdown("---")
-  st.subheader("🔍 Machine Learning Feature Drivers")
+  st.subheader("📊 Academic Risk Factor Correlation Analysis")
   
-  rf_model = model.named_steps["classifier"]
-  preprocessor = model.named_steps["preprocessor"]
-
-  cat_encoder = preprocessor.named_transformers_["cat"]
-  encoded_cat_features = list(
-      cat_encoder.get_feature_names_out(["Subject", "Department"])
+  # Replaced ML feature importance with authentic statistical correlation matrix
+  corr_cols = ["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks", "Risk_Score"]
+  corr_matrix = df[corr_cols].corr()
+  
+  fig_corr = px.imshow(
+      corr_matrix,
+      text_auto=True,
+      aspect="auto",
+      color_continuous_scale="RdBu_r",
+      title="Correlation Matrix of Academic Metrics vs Risk Score"
   )
-  all_features = [
-      "Attendance", "Assignment_Score", "Quiz_Score", "Midterm_Marks", 
-      "Final_Marks", "previous_avg", "recent_avg", "missed_assessments"
-  ] + encoded_cat_features
-
-  importances = rf_model.feature_importances_
-  feat_imp_df = pd.DataFrame(
-      {"Feature": all_features, "Importance": importances}
-  ).sort_values(by="Importance", ascending=False)
-
-  fig_imp = px.bar(
-      feat_imp_df.head(10),
-      x="Importance",
-      y="Feature",
-      orientation="h",
-      title="Top 10 Feature Importances Driving Risk Engine",
-  )
-  fig_imp.update_layout(yaxis={"categoryorder": "total ascending"})
-  st.plotly_chart(fig_imp, use_container_width=True)
-    
+  st.plotly_chart(fig_corr, use_container_width=True)
