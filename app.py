@@ -70,8 +70,7 @@ def load_and_evaluate_data():
     st.error(f"❌ Missing columns in Excel file: {missing_cols}")
     st.stop()
 
-  # --- Deterministic Academic Rule Engine ---
-  # Computes risk score based on rule thresholds instead of black-box ML
+  # --- Deterministic Academic Risk Engine ---
   def compute_academic_risk(row):
     risk_points = 0
     if row["Attendance"] < 65:
@@ -83,12 +82,10 @@ def load_and_evaluate_data():
     if row["Midterm_Marks"] < 50:
       risk_points += 1
     
-    # Normalized risk index between 0.0 and 1.0
     return min(risk_points / 5.0, 1.0)
 
   df["Risk_Score"] = df.apply(compute_academic_risk, axis=1)
   
-  # Proxy metrics for charts
   if "performance_trend" not in df.columns:
     df["performance_trend"] = np.where(df["Final_Marks"] >= df["Midterm_Marks"], "improving", "declining")
   if "missed_assessments" not in df.columns:
@@ -98,22 +95,25 @@ def load_and_evaluate_data():
 
 df = load_and_evaluate_data()
 
-# --- Top Header ---
-st.title("🎓 AI Student Performance Advisor")
-st.markdown("Student telemetry tracking, rule-based risk evaluation, and automated academic intervention guidance.")
-st.markdown("---")
+# --- Sidebar Navigation (Sections) ---
+st.sidebar.title("🎓 Navigation")
+st.sidebar.markdown("Select a dashboard section below:")
+selected_section = st.sidebar.radio(
+    "Go to", 
+    ["📊 Overview", "👤 Student Profile", "📈 Analytics"]
+)
 
-# Clean Tab Layout
-tab1, tab2, tab3 = st.tabs([
-    "📊 Overview", 
-    "👤 Student Profile", 
-    "📈 Analytics"
-])
+st.sidebar.markdown("---")
+st.sidebar.info("💡 **Why Risk Indices?** Risk metrics help educators identify struggling students early for proactive remediation.")
 
 # ==========================================
-# TAB 1: OVERVIEW
+# SECTION 1: OVERVIEW
 # ==========================================
-with tab1:
+if selected_section == "📊 Overview":
+  st.title("🎓 AI Student Performance Advisor")
+  st.markdown("Student telemetry tracking, rule-based risk evaluation, and automated academic intervention guidance.")
+  st.markdown("---")
+  
   st.subheader("Institutional Summary")
   
   col1, col2, col3, col4 = st.columns(4)
@@ -179,18 +179,23 @@ with tab1:
   st.dataframe(top_risk_table, use_container_width=True)
 
 # ==========================================
-# TAB 2: STUDENT PROFILE
+# SECTION 2: STUDENT PROFILE (Lookup in Main Body)
 # ==========================================
-with tab2:
-  st.sidebar.header("🔍 Student Lookup")
+elif selected_section == "👤 Student Profile":
+  st.title("👤 Student Profile Dossier")
+  st.markdown("Detailed breakdown of individual student telemetry, grades, and personalized recommendations.")
+  st.markdown("---")
   
+  # Student Lookup Dropdown placed directly in the Main Dashboard
+  st.markdown("### 🔍 Student Lookup")
   student_options = df[["Student_ID", "Student_Name"]].drop_duplicates().sort_values(by="Student_ID")
   student_options["Display_Label"] = student_options["Student_ID"].astype(str) + " - " + student_options["Student_Name"].astype(str)
   
-  selected_display = st.sidebar.selectbox(
-      "Select Student Profile", 
+  selected_display = st.selectbox(
+      "Search or Select Student", 
       options=student_options["Display_Label"].tolist()
   )
+  st.markdown("---")
   
   selected_student_id = selected_display.split(" - ")[0]
 
@@ -202,7 +207,7 @@ with tab2:
 
   st.markdown(f"""
       <div class='metric-card'>
-          <h2 style='color: #1f2937 !important; margin-bottom: 8px;'>👤 Profile: {student_name}</h2>
+          <h2 style='color: #1f2937 !important; margin-bottom: 8px;'>Profile: {student_name}</h2>
           <p style='color: #4b5563 !important; font-size: 16px; margin: 4px 0;'><b>Student ID:</b> {selected_student_id} &nbsp;|&nbsp; <b>Department:</b> {student_department} &nbsp;|&nbsp; <b>Semester:</b> {student_semester}</p>
           <p style='color: #4b5563 !important; font-size: 16px; margin: 4px 0;'><b>Courses Chosen:</b> {courses_chosen}</p>
       </div>
@@ -280,10 +285,12 @@ with tab2:
       st.markdown(generate_recommendation(row, risk_score))
 
 # ==========================================
-# TAB 3: ANALYTICS
+# SECTION 3: ANALYTICS
 # ==========================================
-with tab3:
-  st.subheader("Comparative Institutional Analytics")
+elif selected_section == "📈 Analytics":
+  st.title("📈 Institutional Analytics")
+  st.markdown("Comparative metrics, grade distributions, and correlation analysis across departments.")
+  st.markdown("---")
   
   d1, d2 = st.columns(2)
   
@@ -314,7 +321,6 @@ with tab3:
   st.markdown("---")
   st.subheader("📊 Academic Risk Factor Correlation Analysis")
   
-  # Replaced ML feature importance with authentic statistical correlation matrix
   corr_cols = ["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks", "Risk_Score"]
   corr_matrix = df[corr_cols].corr()
   
