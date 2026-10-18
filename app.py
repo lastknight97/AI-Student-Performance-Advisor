@@ -86,7 +86,7 @@ def load_and_evaluate_data():
 
   df["Risk_Score"] = df.apply(compute_academic_risk, axis=1)
 
-  # Clear teacher-friendly status labels
+  # Standardized High / Moderate / Low labels
   def get_risk_label(score):
     if score >= 0.5:
       return "High"
@@ -97,7 +97,6 @@ def load_and_evaluate_data():
 
   df["Risk_Level"] = df.apply(lambda row: get_risk_label(row["Risk_Score"]), axis=1)
   
-  # Teacher-friendly progress descriptions
   df["performance_trend"] = np.where(df["Final_Marks"] >= df["Midterm_Marks"], "Improving / Steady", "Declining")
   if "missed_assessments" not in df.columns:
     df["missed_assessments"] = np.where(df["Attendance"] < 75, 2, 0)
@@ -135,7 +134,7 @@ if selected_section == "📊 Overview":
   col1.metric("Active Students", f"{total_students}")
   col2.metric("Avg Attendance", f"{avg_attendance:.1f}%")
   col3.metric("Avg Final Score", f"{avg_final:.1f}")
-  col4.metric("High Risk Students", f"{high_risk_count}", delta=f"-{high_risk_count} urgent", delta_color="inverse")
+  col4.metric("High Status Students", f"{high_risk_count}", delta=f"-{high_risk_count} urgent", delta_color="inverse")
   
   st.markdown("---")
   
@@ -228,7 +227,7 @@ elif selected_section == "👤 Student Profile":
   m1.metric("Attendance Rate", f"{p_attendance:.1f}%")
   m2.metric("Mean Final Marks", f"{p_final:.1f}")
   m3.metric("Est. Missed Tasks", int(p_missed))
-  m4.metric("Overall Academic Status", p_max_risk_label, delta="Needs Attention" if p_max_risk_label == "High Risk" else "Stable", delta_color="inverse")
+  m4.metric("Overall Academic Status", p_max_risk_label, delta="Needs Attention" if p_max_risk_label == "High" else "Stable", delta_color="inverse")
 
   st.markdown("---")
   st.subheader("📚 Subject Performance Matrix")
@@ -271,12 +270,12 @@ elif selected_section == "👤 Student Profile":
   def generate_recommendation(row, risk_level):
     notes = []
     subj = row["Subject"]
-    if risk_level == "High Risk":
-      notes.append(f"⚠️ **{subj} requires urgent attention** (Status: High Risk).")
-    elif risk_level == "Moderate Risk":
-      notes.append(f"⚠️ **{subj} needs monitoring** (Status: Moderate Risk).")
+    if risk_level == "High":
+      notes.append(f"⚠️ **{subj} requires urgent attention** (Status: High).")
+    elif risk_level == "Moderate":
+      notes.append(f"⚠️ **{subj} needs monitoring** (Status: Moderate).")
     else:
-      notes.append(f"✅ **{subj} is performing well** (Status: Low Risk).")
+      notes.append(f"✅ **{subj} is performing well** (Status: Low).")
     
     if row["Final_Marks"] < 50:
       notes.append(f"Final marks are low ({row['Final_Marks']}); recommend mandatory tutoring.")
