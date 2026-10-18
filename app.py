@@ -86,19 +86,19 @@ def load_and_evaluate_data():
 
   df["Risk_Score"] = df.apply(compute_academic_risk, axis=1)
 
-  # Translate numbers to clear teacher-friendly risk levels
+  # Clear teacher-friendly status labels
   def get_risk_label(score):
     if score >= 0.5:
-      return "High"
+      return "High Risk"
     elif score >= 0.2:
-      return "Moderate"
+      return "Moderate Risk"
     else:
-      return "Low"
+      return "Low Risk"
 
-  df["Risk_Level"] = df["Risk_Score"].apply(get_risk_label)
+  df["Risk_Level"] = df.apply(lambda row: get_risk_label(row["Risk_Score"]), axis=1)
   
-  if "performance_trend" not in df.columns:
-    df["performance_trend"] = np.where(df["Final_Marks"] >= df["Midterm_Marks"], "improving", "declining")
+  # Teacher-friendly progress descriptions
+  df["performance_trend"] = np.where(df["Final_Marks"] >= df["Midterm_Marks"], "Improving / Steady", "Declining")
   if "missed_assessments" not in df.columns:
     df["missed_assessments"] = np.where(df["Attendance"] < 75, 2, 0)
 
@@ -129,7 +129,6 @@ if selected_section == "📊 Overview":
   avg_attendance = df["Attendance"].mean()
   avg_final = df["Final_Marks"].mean()
   
-  # Get highest risk category per student for overview counts
   student_max_risk = df.groupby(["Student_ID", "Student_Name"])["Risk_Score"].max().reset_index()
   high_risk_count = int((student_max_risk["Risk_Score"] >= 0.5).sum())
   
@@ -193,7 +192,6 @@ elif selected_section == "👤 Student Profile":
   st.markdown("Comprehensive academic overview and student performance monitoring.")
   st.markdown("---")
   
-  # Student Lookup Dropdown placed directly in the Main Dashboard
   st.markdown("### 🔍 Student Lookup")
   student_options = df[["Student_ID", "Student_Name"]].drop_duplicates().sort_values(by="Student_ID")
   student_options["Display_Label"] = student_options["Student_ID"].astype(str) + " - " + student_options["Student_Name"].astype(str)
@@ -239,7 +237,7 @@ elif selected_section == "👤 Student Profile":
       "Subject", "Attendance", "Quiz_Score", "Assignment_Score", 
       "Midterm_Marks", "Final_Marks", "performance_trend", "Risk_Level"
   ]].copy()
-  display_df = display_df.rename(columns={"Risk_Level": "Risk Status"}).sort_values(by="Final_Marks", ascending=True)
+  display_df = display_df.rename(columns={"Risk_Level": "Risk Status", "performance_trend": "Progress Direction"}).sort_values(by="Final_Marks", ascending=True)
 
   st.dataframe(display_df, use_container_width=True)
 
@@ -256,17 +254,16 @@ elif selected_section == "👤 Student Profile":
     st.plotly_chart(fig_radar, use_container_width=True)
 
   with sc2:
-    st.markdown("#### Attendance vs Final Score")
-    fig_scc = px.scatter(
+    st.markdown("#### Midterm vs. Final Marks Comparison")
+    fig_comp_student = px.bar(
         student_df,
-        x="Attendance",
-        y="Final_Marks",
-        color="performance_trend",
-        size="Assignment_Score",
-        hover_data=["Subject"],
-        title="Performance Trajectory"
+        x="Subject",
+        y=["Midterm_Marks", "Final_Marks"],
+        barmode="group",
+        title="Exam Progress: Midterm vs Final Marks",
+        color_discrete_map={"Midterm_Marks": "#3b82f6", "Final_Marks": "#10b981"}
     )
-    st.plotly_chart(fig_scc, use_container_width=True)
+    st.plotly_chart(fig_comp_student, use_container_width=True)
 
   st.markdown("---")
   st.subheader("💡 AI Advisor Intervention Notes")
@@ -330,7 +327,6 @@ elif selected_section == "📈 Analytics":
   st.subheader("📊 What Drives Academic Risk? (Average Comparison)")
   st.markdown("Comparing the average scores of stable students versus those flagged at risk.")
 
-  # Group data by risk status and get averages for each metric
   df["Status"] = np.where(df["Risk_Score"] >= 0.5, "At Risk", "Stable")
   comparison_df = df[["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks", "Status"]].groupby("Status").mean().reset_index()
   
