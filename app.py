@@ -16,7 +16,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# --- Data Loading & Model Training Pipeline ---
+# --- Data Loading & Preprocessing Pipeline ---
 @st.cache_resource
 def load_data_and_train_model():
   excel_path = "data/Subject_Analytics_Dataset_200_Students.xlsx"
@@ -30,18 +30,63 @@ def load_data_and_train_model():
     )
     st.stop()
 
-  # Define Features and Target
+  # Clean column names (strip trailing/leading whitespaces)
+  df.columns = df.columns.str.strip()
+
+  # Expected columns based on user input:
+  # Student_ID, Student_Name, Department, Semester, Subject, Attendance, Quiz_Score, Assignment_Score, Midterm_Marks, Final_Marks
+  expected_cols = [
+      "Student_ID",
+      "Student_Name",
+      "Department",
+      "Semester",
+      "Subject",
+      "Attendance",
+      "Quiz_Score",
+      "Assignment_Score",
+      "Midterm_Marks",
+      "Final_Marks",
+  ]
+
+  missing_cols = [col for col in expected_cols if col not in df.columns]
+  if missing_cols:
+    st.error(
+        f"❌ Missing columns in Excel file: {missing_cols}\n\n"
+        f"Your Excel columns are: {list(df.columns)}"
+    )
+    st.stop()
+
+  # --- Feature Engineering & Dynamic Risk Label Generation ---
+  # If a 'risk' label doesn't exist, we derive it from Final_Marks, Attendance, and Assignment_Score
+  if "risk" not in df.columns:
+    df["risk"] = (
+        (df["Final_Marks"] < 50) | 
+        (df["Attendance"] < 65) | 
+        (df["Assignment_Score"] < 50)
+    ).astype(int)
+
+  # Create proxy features for historical/trend data if not present in columns
+  if "previous_avg" not in df.columns:
+    df["previous_avg"] = (df["Midterm_Marks"] + df["Quiz_Score"]) / 2
+  if "recent_avg" not in df.columns:
+    df["recent_avg"] = (df["Final_Marks"] + df["Assignment_Score"]) / 2
+  if "performance_trend" not in df.columns:
+    df["performance_trend"] = np.where(df["Final_Marks"] >= df["Midterm_Marks"], "improving", "declining")
+  if "missed_assessments" not in df.columns:
+    df["missed_assessments"] = np.where(df["Attendance"] < 75, 2, 0)
+
+  # Define Features for Machine Learning Model
   feature_cols = [
-      "attendance",
-      "assignment_avg",
-      "quiz_avg",
-      "Midsem",
-      "Comprehensive marks",
+      "Attendance",
+      "Assignment_Score",
+      "Quiz_Score",
+      "Midterm_Marks",
+      "Final_Marks",
       "previous_avg",
       "recent_avg",
       "missed_assessments",
-      "subject",
-      "performance_trend",
+      "Subject",
+      "Department",
   ]
   
   X = df[feature_cols]
@@ -49,16 +94,16 @@ def load_data_and_train_model():
 
   # Preprocessing for Numeric & Categorical Columns
   numeric_features = [
-      "attendance",
-      "assignment_avg",
-      "quiz_avg",
-      "Midsem",
-      "Comprehensive marks",
+      "Attendance",
+      "Assignment_Score",
+      "Quiz_Score",
+      "Midterm_Marks",
+      "Final_Marks",
       "previous_avg",
       "recent_avg",
       "missed_assessments",
   ]
-  categorical_features = ["subject", "performance_trend"]
+  categorical_features = ["Subject", "Department"]
 
   preprocessor = ColumnTransformer(
       transformers=[
@@ -75,7 +120,6 @@ def load_data_and_train_model():
       ]
   )
   
-  # Train model on the dataset
   pipeline.fit(X, y)
   return df, pipeline
 
@@ -88,162 +132,4 @@ st.sidebar.markdown(
     "AI-driven academic risk assessment, telemetry tracking, and personalized interventions."
 )
 
-student_list = sorted(df["student_id"].unique())
-selected_student = st.sidebar.selectbox("Select Student ID", student_list)
-
-# Filter Data for Selected Student
-student_df = df[df["student_id"] == selected_student]
-
-st.title(f"Performance Dossier: {selected_student}")
-st.markdown("---")
-
-# --- Overview Metrics ---
-col1, col2, col3, col4 = st.columns(4)
-overall_attendance = student_df["attendance"].mean()
-overall_avg_score = student_df["recent_avg"].mean()
-total_missed = student_df["missed_assessments"].sum()
-
-# Predict risk probabilities using the trained model
-risk_probs = model.predict_proba(student_df)[:, 1]
-max_risk_prob = float(risk_probs.max())
-overall_risk_status = "At Risk" if max_risk_prob >= 0.5 else "Stable"
-
-col1.metric("Overall Attendance", f"{overall_attendance:.1f}%")
-col2.metric("Recent Score Average", f"{overall_avg_score:.1f}")
-col3.metric("Total Missed Assessments", int(total_missed))
-col4.metric(
-    "Max Risk Probability",
-    f"{max_risk_prob:.2f}",
-    delta=overall_risk_status,
-    delta_color="inverse",
-)
-
-st.markdown("---")
-
-# --- Subject-Wise Performance & Ranking ---
-st.subheader("📚 Subject-Wise Breakdown & Priority Ranking")
-display_df = student_df[[
-    "subject",
-    "attendance",
-    "assignment_avg",
-    "quiz_avg",
-    "Midsem",
-    "Comprehensive marks",
-    "recent_avg",
-    "performance_trend",
-    "missed_assessments",
-]].copy()
-display_df["Risk Probability"] = [f"{p:.2f}" for p in risk_probs]
-display_df = display_df.sort_values(by="recent_avg", ascending=True)
-
-st.dataframe(display_df, use_container_width=True)
-
-# --- Visualizations ---
-col_left, col_right = st.columns(2)
-
-with col_left:
-  st.subheader("📊 Assessment Averages by Subject")
-  fig_bar = px.bar(
-      student_df,
-      x="subject",
-      y=["assignment_avg", "quiz_avg", "recent_avg"],
-      barmode="group",
-      title="Score Metrics across Subjects",
-  )
-  st.plotly_chart(fig_bar, use_container_width=True)
-
-with col_right:
-  st.subheader("📈 Attendance vs. Recent Score Trend")
-  fig_scatter = px.scatter(
-      student_df,
-      x="attendance",
-      y="recent_avg",
-      color="performance_trend",
-      size="missed_assessments",
-      hover_data=["subject"],
-      title="Attendance vs Recent Average (Size = Missed Assessments)",
-  )
-  st.plotly_chart(fig_scatter, use_container_width=True)
-
-st.markdown("---")
-
-# --- Rule-Based Recommendation Engine ---
-st.subheader("💡 Actionable Recommendations & Guidance")
-
-def generate_recommendation(row, prob):
-  recommendations = []
-  subject = row["subject"]
-
-  if prob >= 0.5:
-    recommendations.append(
-        f"**{subject} currently requires immediate attention.** (Model Risk "
-        f"Probability: {prob:.2f})"
-    )
-  else:
-    recommendations.append(
-        f"**{subject} is stable.** (Model Risk Probability: {prob:.2f})"
-    )
-
-  if row["recent_avg"] < 60:
-    recommendations.append(
-        f"- Your recent scores in {subject} ({row['recent_avg']}) are "
-        "declining. Review recent assessment topics and schedule instructor office hours."
-    )
-  if row["attendance"] < 70:
-    recommendations.append(
-        f"- Attendance stands at {row['attendance']}%, which is below the "
-        "recommended institutional threshold (75%). Prioritize upcoming class participation."
-    )
-  if row["missed_assessments"] > 0:
-    recommendations.append(
-        f"- You have missed {int(row['missed_assessments'])} assessment(s). "
-        "Clear pending submissions immediately."
-    )
-  if len(recommendations) == 1:
-    recommendations.append(
-        f"- Maintain your current study strategy for {subject}."
-    )
-
-  return " ".join(recommendations)
-
-for idx, row in student_df.iterrows():
-  prob = risk_probs[student_df.index.get_loc(idx)]
-  with st.expander(f"Intervention Report: {row['subject']} (Risk Score: {prob:.2f})"):
-    rec_text = generate_recommendation(row, prob)
-    st.markdown(rec_text)
-
-# --- Feature Importance Explainability ---
-st.markdown("---")
-st.subheader("🔍 Model Explainability (Feature Importances)")
-rf_model = model.named_steps["classifier"]
-preprocessor = model.named_steps["preprocessor"]
-
-cat_encoder = preprocessor.named_transformers_["cat"]
-encoded_cat_features = list(
-    cat_encoder.get_feature_names_out(["subject", "performance_trend"])
-)
-all_features = [
-    "attendance",
-    "assignment_avg",
-    "quiz_avg",
-    "Midsem",
-    "Comprehensive marks",
-    "previous_avg",
-    "recent_avg",
-    "missed_assessments",
-] + encoded_cat_features
-
-importances = rf_model.feature_importances_
-feat_imp_df = pd.DataFrame(
-    {"Feature": all_features, "Importance": importances}
-).sort_values(by="Importance", ascending=False)
-
-fig_imp = px.bar(
-    feat_imp_df.head(10),
-    x="Importance",
-    y="Feature",
-    orientation="h",
-    title="Top 10 Feature Importances Driving Risk Predictions",
-)
-fig_imp.update_layout(yaxis={"categoryorder": "total ascending"})
-st.plotly_chart(fig_imp, use_container_width=True)
+#
