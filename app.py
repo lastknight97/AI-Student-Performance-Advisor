@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 
 # --- Page Configuration ---
@@ -57,40 +58,38 @@ def load_and_evaluate_data():
     st.error(f"❌ Missing columns in Excel file: {missing_cols}")
     st.stop()
 
-  # --- Machine Learning Model Training ---
-  # 1. Establish training labels based on core academic baselines
-  def assign_risk_category(row):
-    score = 0
-    if row["Attendance"] < 65: score += 2
-    if row["Final_Marks"] < 50: score += 2
-    if row["Assignment_Score"] < 50: score += 1
-    if row["Midterm_Marks"] < 50: score += 1
-    
-    normalized = score / 5.0
-    if normalized >= 0.5:
+  # --- Machine Learning Models (Logistic Regression Baseline + Random Forest) ---
+  feature_cols = ["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks"]
+  X = df[feature_cols]
+
+  # Generate synthetic training targets based on overall academic performance distribution for ML training
+  # (This serves as the target variable for our supervised models)
+  composite_score = (X["Attendance"] * 0.3) + (X["Final_Marks"] * 0.4) + (X["Midterm_Marks"] * 0.3)
+  
+  def get_target_label(score):
+    if score < 55:
       return "High"
-    elif normalized >= 0.2:
+    elif score < 70:
       return "Moderate"
     else:
       return "Low"
 
-  df["Training_Label"] = df.apply(assign_risk_category, axis=1)
+  y = composite_score.apply(get_target_label)
 
-  # 2. Features for the ML Classifier
-  feature_cols = ["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks"]
-  X = df[feature_cols]
-  y = df["Training_Label"]
+  # 1. Baseline Model: Logistic Regression
+  lr_baseline = LogisticRegression(random_state=42, max_iter=200)
+  lr_baseline.fit(X, y)
+  df["Baseline_Pred"] = lr_baseline.predict(X)
 
-  # 3. Train a Random Forest Classifier
-  ml_model = RandomForestClassifier(n_estimators=100, random_state=42)
-  ml_model.fit(X, y)
+  # 2. Main Model: Random Forest Classifier
+  rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+  rf_model.fit(X, y)
 
-  # 4. Predict risk categories and probabilities using ML
-  df["Risk_Level"] = ml_model.predict(X)
+  # Predict risk categories and probabilities using the Random Forest model
+  df["Risk_Level"] = rf_model.predict(X)
   
-  # Calculate a numeric confidence/risk score from model probabilities for sorting/analytics
-  class_labels = list(ml_model.classes_)
-  probs = ml_model.predict_proba(X)
+  class_labels = list(rf_model.classes_)
+  probs = rf_model.predict_proba(X)
   high_idx = class_labels.index("High") if "High" in class_labels else 0
   df["Risk_Score"] = probs[:, high_idx] if "High" in class_labels else 0.0
 
@@ -138,7 +137,7 @@ if selected_section == "📊 Overview":
   c1, c2 = st.columns(2)
   
   with c1:
-    st.markdown("#### Risk Distribution (ML Model)")
+    st.markdown("#### Risk Distribution (Random Forest Model)")
     risk_df = student_max_risk.copy()
     risk_df["Status"] = np.where(risk_df["Risk_Score"] >= 0.5, "At Risk", "Stable")
     status_counts = risk_df["Status"].value_counts().reset_index()
@@ -268,11 +267,11 @@ elif selected_section == "👤 Student Profile":
     notes = []
     subj = row["Subject"]
     if risk_level == "High":
-      notes.append(f"⚠️ **{subj} requires urgent attention** (ML Status: High Risk).")
+      notes.append(f"⚠️ **{subj} requires urgent attention** (ML Status: High).")
     elif risk_level == "Moderate":
-      notes.append(f"⚠️ **{subj} needs monitoring** (ML Status: Moderate Risk).")
+      notes.append(f"⚠️ **{subj} needs monitoring** (ML Status: Moderate).")
     else:
-      notes.append(f"✅ **{subj} is performing well** (ML Status: Low Risk).")
+      notes.append(f"✅ **{subj} is performing well** (ML Status: Low).")
     
     if row["Final_Marks"] < 50:
       notes.append(f"Final marks are low ({row['Final_Marks']}); recommend mandatory tutoring.")
@@ -338,3 +337,4 @@ elif selected_section == "📈 Analytics":
       color_discrete_map={"At Risk": "#ef4444", "Stable": "#10b981"}
   )
   st.plotly_chart(fig_comp, use_container_width=True)
+    
