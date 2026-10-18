@@ -19,7 +19,7 @@ st.set_page_config(
 # --- Data Loading & Model Training Pipeline ---
 @st.cache_resource
 def load_data_and_train_model():
-  csv_path = "student_performance.csv"
+  csv_path = "data/Subject_Analytics_Dataset_200_Students.xlsx"
   
   if os.path.exists(csv_path):
     df = pd.read_csv(csv_path)
