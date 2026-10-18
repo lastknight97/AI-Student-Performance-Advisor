@@ -316,7 +316,7 @@ elif selected_section == "📈 Analytics":
     st.plotly_chart(fig_subj, use_container_width=True)
 
   st.markdown("---")
-  st.subheader("📊 Academic Risk Factor Impact Analysis")
+  st.subheader("📊 What Drives Academic Risk? (Factor Impact Analysis)")
   
   corr_with_risk = (
       df[["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks"]]
@@ -331,7 +331,7 @@ elif selected_section == "📈 Analytics":
       x="Correlation_With_Risk",
       y="Academic_Factor",
       orientation="h",
-      title="Impact of Academic Metrics on Risk Score (Correlation Graph)",
+      title="How Each Metric Affects Student Risk",
       color="Correlation_With_Risk",
       color_continuous_scale="RdBu"
   )
