@@ -1,9 +1,9 @@
-import os
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+from sklearn.ensemble import RandomForestClassifier
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -30,24 +30,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- Data Loading & Deterministic Rule Engine ---
+# --- Data Loading & Machine Learning Risk Engine ---
 @st.cache_resource
 def load_and_evaluate_data():
-  possible_paths = [
-      "data/Subject_Analytics_Dataset_200_Students.xlsx",
-      "Subject_Analytics_Dataset_200_Students.xlsx"
-  ]
+  excel_path = "Subject_Analytics_Dataset_200_Students.xlsx"
   
-  excel_path = None
-  for path in possible_paths:
-    if os.path.exists(path):
-      excel_path = path
-      break
-      
-  if not excel_path:
-    st.error("⚠️ Excel dataset not found. Please ensure 'Subject_Analytics_Dataset_200_Students.xlsx' is uploaded in your repository.")
-    st.stop()
-
   try:
     df = pd.read_excel(excel_path)
   except Exception as e:
@@ -70,33 +57,43 @@ def load_and_evaluate_data():
     st.error(f"❌ Missing columns in Excel file: {missing_cols}")
     st.stop()
 
-  # --- Deterministic Academic Rule Engine ---
-  def compute_academic_risk(row):
-    risk_points = 0
-    if row["Attendance"] < 65:
-      risk_points += 2
-    if row["Final_Marks"] < 50:
-      risk_points += 2
-    if row["Assignment_Score"] < 50:
-      risk_points += 1
-    if row["Midterm_Marks"] < 50:
-      risk_points += 1
+  # --- Machine Learning Model Training ---
+  # 1. Establish training labels based on core academic baselines
+  def assign_risk_category(row):
+    score = 0
+    if row["Attendance"] < 65: score += 2
+    if row["Final_Marks"] < 50: score += 2
+    if row["Assignment_Score"] < 50: score += 1
+    if row["Midterm_Marks"] < 50: score += 1
     
-    return min(risk_points / 5.0, 1.0)
-
-  df["Risk_Score"] = df.apply(compute_academic_risk, axis=1)
-
-  # Standardized High / Moderate / Low labels
-  def get_risk_label(score):
-    if score >= 0.5:
+    normalized = score / 5.0
+    if normalized >= 0.5:
       return "High"
-    elif score >= 0.2:
+    elif normalized >= 0.2:
       return "Moderate"
     else:
       return "Low"
 
-  df["Risk_Level"] = df.apply(lambda row: get_risk_label(row["Risk_Score"]), axis=1)
+  df["Training_Label"] = df.apply(assign_risk_category, axis=1)
+
+  # 2. Features for the ML Classifier
+  feature_cols = ["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks"]
+  X = df[feature_cols]
+  y = df["Training_Label"]
+
+  # 3. Train a Random Forest Classifier
+  ml_model = RandomForestClassifier(n_estimators=100, random_state=42)
+  ml_model.fit(X, y)
+
+  # 4. Predict risk categories and probabilities using ML
+  df["Risk_Level"] = ml_model.predict(X)
   
+  # Calculate a numeric confidence/risk score from model probabilities for sorting/analytics
+  class_labels = list(ml_model.classes_)
+  probs = ml_model.predict_proba(X)
+  high_idx = class_labels.index("High") if "High" in class_labels else 0
+  df["Risk_Score"] = probs[:, high_idx] if "High" in class_labels else 0.0
+
   df["performance_trend"] = np.where(df["Final_Marks"] >= df["Midterm_Marks"], "Improving / Steady", "Declining")
   if "missed_assessments" not in df.columns:
     df["missed_assessments"] = np.where(df["Attendance"] < 75, 2, 0)
@@ -118,7 +115,7 @@ selected_section = st.sidebar.radio(
 # ==========================================
 if selected_section == "📊 Overview":
   st.title("🎓 AI Student Performance Advisor")
-  st.markdown("Comprehensive academic overview and student performance monitoring.")
+  st.markdown("Comprehensive academic overview and machine learning risk monitoring.")
   st.markdown("---")
   
   st.subheader("Institutional Summary")
@@ -141,7 +138,7 @@ if selected_section == "📊 Overview":
   c1, c2 = st.columns(2)
   
   with c1:
-    st.markdown("#### Risk Distribution")
+    st.markdown("#### Risk Distribution (ML Model)")
     risk_df = student_max_risk.copy()
     risk_df["Status"] = np.where(risk_df["Risk_Score"] >= 0.5, "At Risk", "Stable")
     status_counts = risk_df["Status"].value_counts().reset_index()
@@ -174,9 +171,9 @@ if selected_section == "📊 Overview":
     st.plotly_chart(fig_bar, use_container_width=True)
 
   st.markdown("---")
-  st.markdown("### 🚨 Urgent Action Queue")
+  st.markdown("### 🚨 Urgent Action Queue (ML Predicted)")
   
-  top_risk_table = df[df["Risk_Score"] >= 0.5][[
+  top_risk_table = df[df["Risk_Level"] == "High"][[
       "Student_ID", "Student_Name", "Department", "Subject", "Attendance", "Final_Marks", "Risk_Level"
   ]].sort_values(by="Attendance", ascending=True).head(10)
   
@@ -188,7 +185,7 @@ if selected_section == "📊 Overview":
 # ==========================================
 elif selected_section == "👤 Student Profile":
   st.title("👤 Student Profile")
-  st.markdown("Comprehensive academic overview and student performance monitoring.")
+  st.markdown("Comprehensive academic overview and machine learning risk monitoring.")
   st.markdown("---")
   
   st.markdown("### 🔍 Student Lookup")
@@ -271,11 +268,11 @@ elif selected_section == "👤 Student Profile":
     notes = []
     subj = row["Subject"]
     if risk_level == "High":
-      notes.append(f"⚠️ **{subj} requires urgent attention** (Status: High).")
+      notes.append(f"⚠️ **{subj} requires urgent attention** (ML Status: High Risk).")
     elif risk_level == "Moderate":
-      notes.append(f"⚠️ **{subj} needs monitoring** (Status: Moderate).")
+      notes.append(f"⚠️ **{subj} needs monitoring** (ML Status: Moderate Risk).")
     else:
-      notes.append(f"✅ **{subj} is performing well** (Status: Low).")
+      notes.append(f"✅ **{subj} is performing well** (ML Status: Low Risk).")
     
     if row["Final_Marks"] < 50:
       notes.append(f"Final marks are low ({row['Final_Marks']}); recommend mandatory tutoring.")
@@ -293,7 +290,7 @@ elif selected_section == "👤 Student Profile":
 # ==========================================
 elif selected_section == "📈 Analytics":
   st.title("📈 Institutional Analytics")
-  st.markdown("Comprehensive academic overview and student performance monitoring.")
+  st.markdown("Comprehensive academic overview and machine learning risk monitoring.")
   st.markdown("---")
   
   d1, d2 = st.columns(2)
@@ -324,9 +321,9 @@ elif selected_section == "📈 Analytics":
 
   st.markdown("---")
   st.subheader("📊 What Drives Academic Risk? (Average Comparison)")
-  st.markdown("Comparing the average scores of stable students versus those flagged at risk.")
+  st.markdown("Comparing the average scores of stable students versus those flagged at risk by the ML model.")
 
-  df["Status"] = np.where(df["Risk_Score"] >= 0.5, "At Risk", "Stable")
+  df["Status"] = np.where(df["Risk_Level"] == "High", "At Risk", "Stable")
   comparison_df = df[["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks", "Status"]].groupby("Status").mean().reset_index()
   
   melted_comp = comparison_df.melt(id_vars="Status", var_name="Metric", value_name="Average_Score")
