@@ -84,6 +84,49 @@ st.markdown("""
             padding-bottom: 10px;
         }
 
+        /* Sleek Subject Card Styling */
+        .subject-card {
+            background-color: #1a2642;
+            border: 1px solid #28385e;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .subject-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .subject-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .sub-metric {
+            background-color: #131b2e;
+            border-radius: 6px;
+            padding: 6px 8px;
+            text-align: center;
+        }
+        .sub-metric-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            color: #94a3b8;
+            font-weight: 700;
+        }
+        .sub-metric-val {
+            font-size: 13px;
+            color: #f8fafc;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+
         /* Profile Details Badges */
         .profile-badge {
             background-color: #1a2642;
@@ -244,7 +287,7 @@ if selected_section == "📋 Student Performance Desk":
             </div>
         """, unsafe_allow_html=True)
 
-    # Standardized Layout Grid (Profile Details vs Subject Analytics Matrix)
+    # Standardized Layout Grid (Profile Details vs Sleek Subject Cards Grid)
     col_left, col_right = st.columns([1.2, 2.8])
 
     with col_left:
@@ -273,14 +316,49 @@ if selected_section == "📋 Student Performance Desk":
 
     with col_right:
         st.markdown("<div class='content-box'>", unsafe_allow_html=True)
-        st.markdown("<div class='box-header'>📚 Subject Analytics Matrix</div>", unsafe_allow_html=True)
+        st.markdown("<div class='box-header'>📚 Subject Analytics Matrix (Sleek Cards)</div>", unsafe_allow_html=True)
         
-        matrix_df = student_df[["Subject", "Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks", "Grade", "ML_Risk_Probability"]].copy()
-        matrix_df["Status"] = np.where(matrix_df["ML_Risk_Probability"] >= 0.5, "⚠️ Flagged", "✅ Stable")
-        matrix_df = matrix_df[["Subject", "Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks", "Grade", "Status"]]
-        matrix_df.columns = ["Subject Name", "Attendance %", "Quiz", "Assignment", "Midterm", "Final", "Grade", "ML Status"]
-        
-        st.dataframe(matrix_df, use_container_width=True, hide_index=True)
+        for idx, row in student_df.iterrows():
+            subj_name = row["Subject"]
+            quiz = row["Quiz_Score"]
+            assignment = row["Assignment_Score"]
+            midterm = row["Midterm_Marks"]
+            final = row["Final_Marks"]
+            grade = row["Grade"]
+            prob = row["ML_Risk_Probability"]
+            status_badge = "⚠️ Flagged" if prob >= 0.5 else "✅ Stable"
+            badge_color = "#f87171" if prob >= 0.5 else "#34d399"
+            
+            st.markdown(f"""
+                <div class='subject-card'>
+                    <div class='subject-title'>
+                        <span>📖 {subj_name}</span>
+                        <span>
+                            <span style='font-size:12px; color:#94a3b8; margin-right:8px;'>Grade: <b>{grade}</b></span>
+                            <span style='font-size:11px; background:#131b2e; padding:3px 8px; border-radius:6px; color:{badge_color}; border:1px solid {badge_color}50;'>{status_badge}</span>
+                        </span>
+                    </div>
+                    <div class='subject-grid'>
+                        <div class='sub-metric'>
+                            <div class='sub-metric-label'>Quiz</div>
+                            <div class='sub-metric-val'>{quiz}</div>
+                        </div>
+                        <div class='sub-metric'>
+                            <div class='sub-metric-label'>Assignment</div>
+                            <div class='sub-metric-val'>{assignment}</div>
+                        </div>
+                        <div class='sub-metric'>
+                            <div class='sub-metric-label'>Midterm</div>
+                            <div class='sub-metric-val'>{midterm}</div>
+                        </div>
+                        <div class='sub-metric'>
+                            <div class='sub-metric-label'>Final</div>
+                            <div class='sub-metric-val'>{final}</div>
+                        </div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
         st.markdown("</div>", unsafe_allow_html=True)
 
     # Standardized Lower Grid (Subject Breakdown Chart vs AI Recommendation Engine)
