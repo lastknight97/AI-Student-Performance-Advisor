@@ -6,6 +6,8 @@ import plotly.graph_objects as go
 import streamlit as st
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, confusion_matrix
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -32,9 +34,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- Data Loading & Machine Learning Risk Engine ---
+# --- Data Loading & Machine Learning Workflow (Slide 6) ---
 @st.cache_resource
 def load_and_evaluate_data():
+  # Step 1: Collect dataset from the data folder
   excel_path = "data/Subject_Analytics_Dataset_200_Students.xlsx"
   
   if not os.path.exists(excel_path):
@@ -47,7 +50,7 @@ def load_and_evaluate_data():
     st.error(f"⚠️ Error reading Excel file: {e}")
     st.stop()
 
-  # Clean column names and string spaces
+  # Step 2: Clean and validate the data
   df.columns = df.columns.str.strip()
   for col in df.select_dtypes(include=['object']).columns:
     df[col] = df[col].astype(str).str.strip()
@@ -63,7 +66,7 @@ def load_and_evaluate_data():
     st.error(f"❌ Missing columns in Excel file: {missing_cols}")
     st.stop()
 
-  # --- Machine Learning Models (Logistic Regression Baseline + Random Forest) ---
+  # Step 3 & 4: Explore distributions and engineer meaningful features
   feature_cols = ["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks"]
   X = df[feature_cols]
 
@@ -79,14 +82,23 @@ def load_and_evaluate_data():
 
   y = composite_score.apply(get_target_label)
 
-  # 1. Baseline Model: Logistic Regression
-  lr_baseline = LogisticRegression(random_state=42, max_iter=200)
-  lr_baseline.fit(X, y)
-  df["Baseline_Pred"] = lr_baseline.predict(X)
+  # Step 5: Split data into training and testing sets[span_1](start_span)[span_1](end_span)
+  X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-  # 2. Main Model: Random Forest Classifier
+  # Step 6: Train Logistic Regression baseline[span_2](start_span)[span_2](end_span)
+  lr_baseline = LogisticRegression(random_state=42, max_iter=200)
+  lr_baseline.fit(X_train, y_train)
+  lr_pred = lr_baseline.predict(X_test)
+  lr_report = classification_report(y_test, lr_pred, output_dict=True)
+
+  # Step 7: Train Random Forest classifier[span_3](start_span)[span_3](end_span)
   rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
-  rf_model.fit(X, y)
+  rf_model.fit(X_train, y_train)
+  rf_pred = rf_model.predict(X_test)
+  
+  # Step 8: Calculate precision, recall, F1-score, and confusion matrix[span_4](start_span)[span_4](end_span)
+  rf_report = classification_report(y_test, rf_pred, output_dict=True)
+  conf_matrix = confusion_matrix(y_test, rf_pred, labels=["High", "Moderate", "Low"])
 
   df["Risk_Level"] = rf_model.predict(X)
   
@@ -99,10 +111,10 @@ def load_and_evaluate_data():
   if "missed_assessments" not in df.columns:
     df["missed_assessments"] = np.where(df["Attendance"] < 75, 2, 0)
 
-  return df, rf_model
+  return df, rf_model, rf_report, lr_report, conf_matrix
 
-# Load both df and rf_model correctly
-df, rf_model = load_and_evaluate_data()
+# Load dataset and ML evaluation metrics
+df, rf_model, rf_report, lr_report, conf_matrix = load_and_evaluate_data()
 
 # --- Sidebar Navigation (Sections) ---
 st.sidebar.title("🎓 Navigation")
@@ -341,6 +353,41 @@ elif selected_section == "📈 Analytics":
   )
   st.plotly_chart(fig_comp, use_container_width=True)
 
+  # --- Step 8: Model Evaluation Metrics (Precision, Recall, F1-Score)[span_5](start_span)[span_5](end_span) ---
+  st.markdown("---")
+  st.subheader("📐 Model Evaluation Metrics (Step 8 Verification)")
+  st.markdown("Comparing model performance on test data using **Precision, Recall, and F1-Score**[span_6](start_span)[span_6](end_span).")
+
+  col_m1, col_m2 = st.columns(2)
+  with col_m1:
+    st.markdown("#### 🌲 Random Forest Classifier Metrics")
+    rf_metrics_df = pd.DataFrame({
+        "Class": ["High", "Moderate", "Low"],
+        "Precision": [rf_report['High']['precision'], rf_report['Moderate']['precision'], rf_report['Low']['precision']],
+        "Recall": [rf_report['High']['recall'], rf_report['Moderate']['recall'], rf_report['Low']['recall']],
+        "F1-Score": [rf_report['High']['f1-score'], rf_report['Moderate']['f1-score'], rf_report['Low']['f1-score']]
+    })
+    st.dataframe(rf_metrics_df.style.format(precision=2), use_container_width=True)
+
+  with col_m2:
+    st.markdown("#### 📉 Logistic Regression Baseline Metrics")
+    lr_metrics_df = pd.DataFrame({
+        "Class": ["High", "Moderate", "Low"],
+        "Precision": [lr_report['High']['precision'], lr_report['Moderate']['precision'], lr_report['Low']['precision']],
+        "Recall": [lr_report['High']['recall'], lr_report['Moderate']['recall'], lr_report['Low']['recall']],
+        "F1-Score": [lr_report['High']['f1-score'], lr_report['Moderate']['f1-score'], lr_report['Low']['f1-score']]
+    })
+    st.dataframe(lr_metrics_df.style.format(precision=2), use_container_width=True)
+
+  # --- Confusion Matrix Display ---
+  st.markdown("#### 🗂️ Random Forest Confusion Matrix")
+  cm_df = pd.DataFrame(
+      conf_matrix, 
+      index=["Actual High", "Actual Moderate", "Actual Low"], 
+      columns=["Pred High", "Pred Moderate", "Pred Low"]
+  )
+  st.dataframe(cm_df, use_container_width=True)
+
   # --- Feature Importance Visualization ---
   st.markdown("---")
   st.subheader("🔍 AI Model Insights: What the Model Weighs Most")
@@ -371,3 +418,4 @@ elif selected_section == "📈 Analytics":
   )
   fig_importance.update_layout(xaxis_title="Impact Weight", yaxis_title="Academic Metric")
   st.plotly_chart(fig_importance, use_container_width=True)
+    
