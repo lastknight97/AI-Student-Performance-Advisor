@@ -9,15 +9,15 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
 
-# --- Page Configuration ---
+# --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="AI Student Performance Dashboard",
+    page_title="AI Student Performance & Risk Advisory Dashboard",
     page_icon="🎓",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# --- Modern Ultra-Clean SaaS Theme CSS ---
+# --- MODERN GLASSMORPHISM DARK THEME CSS ---
 st.markdown("""
     <style>
         .stApp {
@@ -124,7 +124,7 @@ st.markdown("""
             margin-bottom: 12px;
         }
         .subject-card-title {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
             color: #f8fafc;
             display: flex;
@@ -149,7 +149,7 @@ st.markdown("""
             font-weight: 700;
         }
         .sub-val {
-            font-size: 13px;
+            font-size: 12px;
             color: #f1f5f9;
             font-weight: 700;
         }
@@ -176,7 +176,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 9-Step scikit-learn ML Workflow ---
+# --- 9-STEP SCIKIT-LEARN ML PIPELINE ---
 @st.cache_resource
 def run_ml_pipeline():
     excel_path = "data/Subject_Analytics_Dataset_200_Students.xlsx"
@@ -191,10 +191,12 @@ def run_ml_pipeline():
         st.error(f"⚠️ Error reading dataset: {e}")
         st.stop()
 
+    # 2. Column Cleaning
     df.columns = df.columns.str.strip()
     for col in df.select_dtypes(include=['object']).columns:
         df[col] = df[col].astype(str).str.strip()
 
+    # 3. Feature Engineering
     if "performance_trend" not in df.columns:
         df["performance_trend"] = np.where(df["Final_Marks"] >= df["Midterm_Marks"], "Improving/Stable", "Declining")
 
@@ -207,17 +209,21 @@ def run_ml_pipeline():
     X = df[feature_cols].copy()
     X["trend_numeric"] = trend_numeric
 
+    # 4. Target Variable Definition
     composite_score = (df["Attendance"] * 0.25) + (df["Final_Marks"] * 0.35) + (df["Midterm_Marks"] * 0.25) + (df["Quiz_Score"] * 0.15)
     df["risk_target"] = np.where(composite_score < 58, 1, 0)
     y = df["risk_target"]
 
+    # 5. Data Splitting
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+    # 6. Baseline Model
     lr_baseline = LogisticRegression(random_state=42, max_iter=300)
     lr_baseline.fit(X_train, y_train)
     lr_pred = lr_baseline.predict(X_test)
     lr_report = classification_report(y_test, lr_pred, output_dict=True)
 
+    # 7. Primary ML Model
     rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
     rf_model.fit(X_train, y_train)
     rf_pred = rf_model.predict(X_test)
@@ -225,9 +231,11 @@ def run_ml_pipeline():
     rf_report = classification_report(y_test, rf_pred, output_dict=True)
     conf_matrix = confusion_matrix(y_test, rf_pred)
 
+    # 8. Inference & Risk Scoring
     df["ML_Attention_Predicted"] = rf_model.predict(X)
     df["ML_Risk_Probability"] = rf_model.predict_proba(X)[:, 1]
 
+    # 9. Grade Mapping
     def get_grade(marks):
         if marks >= 80: return "A"
         elif marks >= 70: return "B"
@@ -241,7 +249,7 @@ def run_ml_pipeline():
 
 df, rf_model, rf_report, lr_report, conf_matrix, feature_cols = run_ml_pipeline()
 
-# --- Top Header & Controls ---
+# --- TOP HEADER & NAVIGATION CONTROLS ---
 st.markdown("""
     <div class="hero-banner">
         <div>
@@ -271,7 +279,7 @@ st.markdown("<hr style='border-color: rgba(255,255,255,0.08); margin: 16px 0 24p
 
 
 # ==========================================
-# SECTION 1: ACTIONABLE STUDENT OVERVIEW
+# MODULE 1: 📋 STUDENT OVERVIEW
 # ==========================================
 if selected_section == "📋 Student Overview":
     student_df = df[df["Student_ID"] == selected_student_id]
@@ -287,7 +295,7 @@ if selected_section == "📋 Student Overview":
     ml_risk_prob = student_df["ML_Risk_Probability"].mean()
     ml_requires_attention = ml_risk_prob >= 0.5
 
-    # Top KPI Glass Cards
+    # KPI Summary Grid (4 Glass Cards)
     k1, k2, k3, k4 = st.columns(4)
     with k1:
         st.markdown(f"""
@@ -309,7 +317,7 @@ if selected_section == "📋 Student Overview":
         st.markdown(f"""
             <div class="glass-card" style="border-left: 4px solid #c084fc;">
                 <div class="card-label">Calculated GPA</div>
-                <div class="card-value">{cgpa} <span style="font-size:14px; color:#64748b;">/ 10</span></div>
+                <div class="card-value">{cgpa} <span style="font-size:14px; color:#64748b;">/ 10.0</span></div>
                 <div style="font-size:12px; color:#94a3b8; margin-top:2px;">Avg Score: {avg_score:.1f}</div>
             </div>
         """, unsafe_allow_html=True)
@@ -319,13 +327,13 @@ if selected_section == "📋 Student Overview":
             <div class="glass-card" style="border-left: 4px solid {'#f43f5e' if ml_requires_attention else '#10b981'};">
                 <div class="card-label">ML Risk Assessment</div>
                 <div style="margin-top:8px;">{status_html}</div>
-                <div style="font-size:12px; color:#94a3b8; margin-top:8px;">Risk Index: <b>{ml_risk_prob:.2f}</b></div>
+                <div style="font-size:12px; color:#94a3b8; margin-top:8px;">Risk Probability: <b>{ml_risk_prob:.2f}</b></div>
             </div>
         """, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- PRESCRIPTIVE RECOVERY ADVISORY (ACTIONABLE STEPS) ---
+    # Prescriptive AI Recovery Roadmap (Conditional Logic)
     flagged_subjects = student_df[student_df["ML_Risk_Probability"] >= 0.5]
     
     if len(flagged_subjects) > 0:
@@ -339,15 +347,14 @@ if selected_section == "📋 Student Overview":
             midterm = row["Midterm_Marks"]
             attendance = row["Attendance"]
             
-            # Dynamic Step Generation based on specific weaknesses
             steps = []
             if quiz < 60:
-                steps.append(f"**Step 1: Quiz Remediation** — Score is `{quiz}/100`. Schedule weekly self-assessments on fundamental concepts before the next evaluation.")
+                steps.append(f"**Step 1: Quiz Remediation** — Score is `{quiz}/100`. Schedule weekly self-assessments on core module concepts.")
             if midterm < 60:
-                steps.append(f"**Step 2: Midterm Concept Review** — Score is `{midterm}/100`. Request 1-on-1 faculty office hours for module re-examination.")
+                steps.append(f"**Step 2: Midterm Review** — Score is `{midterm}/100`. Book mandatory faculty office hours for concept re-evaluation.")
             if attendance < 75:
-                steps.append(f"**Step 3: Attendance Recovery** — Current attendance is `{attendance:.1f}%`. Attendance is below the 75% baseline; mandatory tutorial sessions required.")
-            steps.append(f"**Step 4: Practice Problem Sets** — Complete 3 targeted practice worksheets prior to final examinations to recover weighting.")
+                steps.append(f"**Step 3: Attendance Correction** — Attendance is `{attendance:.1f}%` (below 75% threshold). Enroll in remedial tutorial sessions.")
+            steps.append(f"**Step 4: Targeted Practice** — Complete 3 recommended problem worksheets prior to finals.")
 
             steps_html = "".join([f"<div class='action-step'>📌 {step}</div>" for step in steps])
 
@@ -362,17 +369,17 @@ if selected_section == "📋 Student Overview":
     else:
         st.markdown("""
             <div class='container-box' style='border-left: 4px solid #10b981;'>
-                <div class='section-header' style='color:#34d399;'>✅ Academic Status: Optimal</div>
-                <div style='font-size:12px; color:#cbd5e1;'>All enrolled modules are performing above risk thresholds. Maintain current study routine and assignment submission schedules.</div>
+                <div class='section-header' style='color:#34d399;'>✅ Optimal Standing Confirmation</div>
+                <div style='font-size:12px; color:#cbd5e1;'>All enrolled modules meet institutional performance benchmarks. No active intervention or recovery steps required.</div>
             </div>
         """, unsafe_allow_html=True)
 
-    # --- 3-COLUMN ANALYTICAL OVERVIEW GRID ---
+    # 3-Column Analytical Workspace Grid
     col_a, col_b, col_c = st.columns([1.1, 1.2, 1.7])
 
     with col_a:
         st.markdown("<div class='container-box'>", unsafe_allow_html=True)
-        st.markdown("<div class='section-header'>🕸️ Competency Balance</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>🕸️ Competency Radar</div>", unsafe_allow_html=True)
         
         categories = student_df["Subject"].tolist()
         fig_radar = go.Figure()
@@ -387,19 +394,18 @@ if selected_section == "📋 Student Overview":
         fig_radar.update_layout(
             polar=dict(
                 radialaxis=dict(visible=True, range=[0, 100], gridcolor='#1e293b'),
-                angularaxis=dict(gridcolor='#1e293b', tickfont=dict(color='#f1f5f9', size=10))
+                angularaxis=dict(gridcolor='#1e293b', tickfont=dict(color='#f1f5f9', size=9))
             ),
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            margin=dict(l=20, r=20, t=10, b=10), height=280, showlegend=False
+            margin=dict(l=15, r=15, t=10, b=10), height=270, showlegend=False
         )
         st.plotly_chart(fig_radar, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col_b:
         st.markdown("<div class='container-box'>", unsafe_allow_html=True)
-        st.markdown("<div class='section-header'>📊 Benchmark Gap Analysis</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>📊 Benchmark Gap</div>", unsafe_allow_html=True)
         
-        # Gap vs Target (Benchmark = 75)
         gap_df = student_df[["Subject", "Final_Marks"]].copy()
         gap_df["Target Benchmark"] = 75
         
@@ -409,7 +415,7 @@ if selected_section == "📋 Student Overview":
         )
         fig_gap.update_layout(
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#f1f5f9"), height=280, margin=dict(l=10, r=10, t=10, b=10),
+            font=dict(color="#f1f5f9"), height=270, margin=dict(l=10, r=10, t=10, b=10),
             yaxis=dict(gridcolor='#1e293b', range=[0, 100]),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
@@ -418,7 +424,7 @@ if selected_section == "📋 Student Overview":
 
     with col_c:
         st.markdown("<div class='container-box'>", unsafe_allow_html=True)
-        st.markdown("<div class='section-header'>📖 Enrolled Module Breakdown</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>📖 Enrolled Module Cards</div>", unsafe_allow_html=True)
         
         for idx, row in student_df.iterrows():
             subj_name = row["Subject"]
@@ -435,7 +441,7 @@ if selected_section == "📋 Student Overview":
                 <div class='subject-card'>
                     <div class='subject-card-title'>
                         <span>{subj_name} (Grade: {grade})</span>
-                        <span style='font-size:11px; color:{color}; font-weight:700;'>{badge}</span>
+                        <span style='color:{color}; font-weight:700;'>{badge}</span>
                     </div>
                     <div class='subject-grid'>
                         <div class='sub-box'><div class='sub-lbl'>Quiz</div><div class='sub-val'>{quiz}</div></div>
@@ -450,7 +456,7 @@ if selected_section == "📋 Student Overview":
 
 
 # ==========================================
-# SECTION 2: ANALYTICS & ML INSIGHTS
+# MODULE 2: 📊 ANALYTICS & ML INSIGHTS
 # ==========================================
 elif selected_section == "📊 Analytics & ML Insights":
     st.markdown("### 📊 Cohort Performance & Machine Learning Verification")
@@ -522,7 +528,7 @@ elif selected_section == "📊 Analytics & ML Insights":
 
 
 # ==========================================
-# SECTION 3: INSTITUTIONAL SUMMARY
+# MODULE 3: 🏠 INSTITUTIONAL SUMMARY
 # ==========================================
 elif selected_section == "🏠 Institutional Summary":
     st.markdown("### 🏠 Institutional Summary Dashboard")
