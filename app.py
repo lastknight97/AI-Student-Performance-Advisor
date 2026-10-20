@@ -16,7 +16,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# --- Custom CSS for Styling, Contrast & Round Floating Chat Widget ---
+# --- Custom CSS for Styling, Contrast & Strict Bottom-Right Floating Widget ---
 st.markdown("""
     <style>
         .main { background-color: #f8f9fa; }
@@ -31,31 +31,39 @@ st.markdown("""
         .metric-card h2, .metric-card p, .metric-card b {
             color: #1f2937 !important;
         }
-        /* Floating Chat Widget Container Styling */
+        
+        /* Strict Bottom-Right Floating Chat Popup Window */
         .floating-chat-container {
-            position: fixed;
-            bottom: 85px;
-            right: 20px;
-            width: 360px;
-            max-width: calc(100vw - 40px);
-            height: 480px;
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-            z-index: 99999;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            border: 1px solid #e5e7eb;
+            position: fixed !important;
+            bottom: 90px !important;
+            right: 20px !important;
+            left: auto !important;
+            top: auto !important;
+            width: 360px !important;
+            max-width: calc(100vw - 40px) !important;
+            height: 480px !important;
+            background-color: white !important;
+            border-radius: 12px !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important;
+            z-index: 999998 !important;
+            padding: 12px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            border: 1px solid #e5e7eb !important;
         }
-        /* Round Floating Action Button (FAB) for Peter */
+        
+        /* Strict Bottom-Right Floating Action Button (FAB) for Peter */
         .floating-btn-wrapper {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 999999;
+            position: fixed !important;
+            bottom: 20px !important;
+            right: 20px !important;
+            left: auto !important;
+            top: auto !important;
+            z-index: 999999 !important;
         }
-        div[data-testid="stButton"] button[kind="primary"] {
+        
+        /* Circular button styling */
+        .floating-btn-wrapper button {
             border-radius: 50% !important;
             width: 55px !important;
             height: 55px !important;
@@ -65,9 +73,9 @@ st.markdown("""
             font-size: 22px !important;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
             border: none !important;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -75,7 +83,6 @@ st.markdown("""
 # --- Data Loading & Machine Learning Workflow (Slide 6) ---
 @st.cache_resource
 def load_and_evaluate_data():
-  # Step 1: Collect dataset from the data folder[span_1](start_span)[span_1](end_span)
   excel_path = "data/Subject_Analytics_Dataset_200_Students.xlsx"
   
   if not os.path.exists(excel_path):
@@ -88,7 +95,6 @@ def load_and_evaluate_data():
     st.error(f"⚠️ Error reading Excel file: {e}")
     st.stop()
 
-  # Step 2: Clean and validate the data[span_2](start_span)[span_2](end_span)
   df.columns = df.columns.str.strip()
   for col in df.select_dtypes(include=['object']).columns:
     df[col] = df[col].astype(str).str.strip()
@@ -104,7 +110,6 @@ def load_and_evaluate_data():
     st.error(f"❌ Missing columns in Excel file: {missing_cols}")
     st.stop()
 
-  # Step 3 & 4: Explore distributions and engineer meaningful features[span_3](start_span)[span_3](end_span)
   feature_cols = ["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks"]
   X = df[feature_cols]
 
@@ -120,21 +125,17 @@ def load_and_evaluate_data():
 
   y = composite_score.apply(get_target_label)
 
-  # Step 5: Split data into training and testing sets[span_4](start_span)[span_4](end_span)
   X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-  # Step 6: Train Logistic Regression baseline[span_5](start_span)[span_5](end_span)
   lr_baseline = LogisticRegression(random_state=42, max_iter=200)
   lr_baseline.fit(X_train, y_train)
   lr_pred = lr_baseline.predict(X_test)
   lr_report = classification_report(y_test, lr_pred, output_dict=True)
 
-  # Step 7: Train Random Forest classifier[span_6](start_span)[span_6](end_span)
   rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
   rf_model.fit(X_train, y_train)
   rf_pred = rf_model.predict(X_test)
   
-  # Step 8: Calculate precision, recall, F1-score, and confusion matrix[span_7](start_span)[span_7](end_span)
   rf_report = classification_report(y_test, rf_pred, output_dict=True)
   conf_matrix = confusion_matrix(y_test, rf_pred, labels=["High", "Moderate", "Low"])
 
@@ -462,7 +463,7 @@ if "messages" not in st.session_state:
       {"role": "assistant", "content": "👋 Hi! I'm **Peter**, your AI Assistant. Ask me about any student record or type *'recommendations'* for improvement steps!"}
   ]
 
-# Render the round floating action button in the bottom right
+# Render the round floating action button pinned strictly to bottom right
 with st.container():
   st.markdown('<div class="floating-btn-wrapper">', unsafe_allow_html=True)
   if st.button("💬", key="chat_toggle_btn", type="primary"):
@@ -470,7 +471,7 @@ with st.container():
     st.rerun()
   st.markdown('</div>', unsafe_allow_html=True)
 
-# Render Peter's chat popup window if open
+# Render Peter's chat popup window pinned strictly to bottom right if open
 if st.session_state.chat_open:
   with st.container():
     st.markdown('<div class="floating-chat-container">', unsafe_allow_html=True)
@@ -487,7 +488,7 @@ if st.session_state.chat_open:
     st.markdown("---")
     
     # Chat history scrollable container
-    chat_container = st.container(height=300)
+    chat_container = st.container(height=280)
     with chat_container:
       for message in st.session_state.messages:
         with st.chat_message(message["role"]):
@@ -497,7 +498,7 @@ if st.session_state.chat_open:
     with st.form(key="peter_chat_form", clear_on_submit=True):
       cols_input = st.columns([4, 1])
       with cols_input[0]:
-        user_text = st.text_input("Prompt Peter...", placeholder="Ask about student or strategy...", label_visibility="collapsed")
+        user_text = st.text_input("Prompt Peter...", placeholder="Ask student or strategy...", label_visibility="collapsed")
       with cols_input[1]:
         submitted = st.form_submit_button("Send")
 
