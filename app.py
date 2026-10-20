@@ -361,37 +361,61 @@ if selected_section == "📋 Student Performance Desk":
             
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Standardized Lower Grid (Subject Breakdown Chart vs AI Recommendation Engine)
+    # Standardized Lower Grid (Sleek Subject Score Comparison Cards vs AI Recommendation Engine)
     low_1, low_2 = st.columns(2)
 
     with low_1:
         st.markdown("<div class='content-box'>", unsafe_allow_html=True)
-        st.markdown("<div class='box-header'>📊 Subject Score Comparison</div>", unsafe_allow_html=True)
-        fig_bar = px.bar(
-            student_df, y="Subject",
-            x=["Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks"],
-            barmode="group", orientation="h",
-            color_discrete_sequence=["#60a5fa", "#3b82f6", "#2563eb", "#1d4ed8"]
-        )
-        fig_bar.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#f8fafc"), height=260, margin=dict(t=10, b=10, l=10, r=10),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-        )
-        st.plotly_chart(fig_bar, use_container_width=True)
+        st.markdown("<div class='box-header'>📊 Subject Score Comparison (Sleek Cards)</div>", unsafe_allow_html=True)
+        
+        for idx, row in student_df.iterrows():
+            subj_name = row["Subject"]
+            quiz = row["Quiz_Score"]
+            assignment = row["Assignment_Score"]
+            midterm = row["Midterm_Marks"]
+            final = row["Final_Marks"]
+            
+            st.markdown(f"""
+                <div class='subject-card'>
+                    <div class='subject-title' style='font-size:13px; color:#94a3b8;'>
+                        <span>📈 {subj_name} — Assessment Spread</span>
+                    </div>
+                    <div class='subject-grid'>
+                        <div class='sub-metric'>
+                            <div class='sub-metric-label'>Quiz</div>
+                            <div class='sub-metric-val' style='color:#60a5fa;'>{quiz}</div>
+                        </div>
+                        <div class='sub-metric'>
+                            <div class='sub-metric-label'>Assignment</div>
+                            <div class='sub-metric-val' style='color:#3b82f6;'>{assignment}</div>
+                        </div>
+                        <div class='sub-metric'>
+                            <div class='sub-metric-label'>Midterm</div>
+                            <div class='sub-metric-val' style='color:#2563eb;'>{midterm}</div>
+                        </div>
+                        <div class='sub-metric'>
+                            <div class='sub-metric-label'>Final</div>
+                            <div class='sub-metric-val' style='color:#1d4ed8;'>{final}</div>
+                        </div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
         st.markdown("</div>", unsafe_allow_html=True)
 
     with low_2:
         st.markdown("<div class='content-box'>", unsafe_allow_html=True)
         st.markdown("<div class='box-header'>💡 AI & Machine Learning Advisory Engine</div>", unsafe_allow_html=True)
         
-        for idx, row in student_df.iterrows():
-            prob = row["ML_Risk_Probability"]
-            subj = row["Subject"]
-            if prob >= 0.5:
+        flagged_subjects = student_df[student_df["ML_Risk_Probability"] >= 0.5]
+        
+        if len(flagged_subjects) > 0:
+            for idx, row in flagged_subjects.iterrows():
+                prob = row["ML_Risk_Probability"]
+                subj = row["Subject"]
                 st.error(f"⚠️ **{subj}** (Risk Index: `{prob:.2f}`)\n\n*Action Required:* Trailing assessment scores or low attendance recorded. Faculty advisor review recommended.")
-            else:
-                st.success(f"✅ **{subj}** (Risk Index: `{prob:.2f}`)\n\n*Status:* Performance is stable and aligned with academic excellence benchmarks.")
+        else:
+            st.success("✅ **Stable Standing:** All enrolled subjects are meeting academic performance benchmarks. No active interventions or recommendations required.")
         
         st.markdown("</div>", unsafe_allow_html=True)
 
