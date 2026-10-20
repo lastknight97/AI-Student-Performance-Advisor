@@ -17,137 +17,114 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- Enterprise-Grade UI/UX CSS & Styling ---
+# --- Creative Ultra-Modern SaaS CSS ---
 st.markdown("""
     <style>
-        /* Global App Theme */
+        /* Global Background & Typography */
         .stApp {
-            background-color: #0b0f17 !important;
-            color: #f8fafc !important;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #090d16 !important;
+            color: #f1f5f9 !important;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        /* Standardized Metric Card */
-        .metric-card {
-            background-color: #131b2e;
-            border: 1px solid #1e293b;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            margin-bottom: 20px;
+        /* Top Banner */
+        .hero-banner {
+            background: linear-gradient(135deg, rgba(30,41,59,0.8) 0%, rgba(15,23,42,0.9) 100%);
+            border: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        .metric-card-primary {
-            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
-            border: 1px solid #3b82f6;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
-            margin-bottom: 20px;
-        }
-        .metric-title {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #94a3b8;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-        .metric-card-primary .metric-title {
-            color: #bfdbfe;
-        }
-        .metric-value {
-            font-size: 26px;
+        .hero-title {
+            font-size: 22px;
             font-weight: 800;
-            color: #f8fafc;
+            background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             margin: 0;
         }
-        .metric-card-primary .metric-value {
-            color: #ffffff;
+        .hero-subtitle {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 4px;
         }
 
-        /* Standardized Content / Chart Container */
-        .content-box {
-            background-color: #131b2e;
-            border: 1px solid #1e293b;
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            margin-bottom: 24px;
+        /* Glassmorphism Metric Cards */
+        .glass-card {
+            background: rgba(18, 24, 38, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 18px 20px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
         }
-        .box-header {
-            font-size: 15px;
+        .glass-card:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+            transform: translateY(-2px);
+        }
+        .card-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #64748b;
             font-weight: 700;
+        }
+        .card-value {
+            font-size: 24px;
+            font-weight: 800;
             color: #f8fafc;
+            margin-top: 4px;
+        }
+
+        /* Unified Container Box */
+        .container-box {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .section-header {
+            font-size: 14px;
+            font-weight: 700;
+            color: #e2e8f0;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
             margin-bottom: 16px;
-            letter-spacing: 0.02em;
-            border-bottom: 1px solid #1e293b;
-            padding-bottom: 10px;
-        }
-
-        /* Sleek Subject Card Styling */
-        .subject-card {
-            background-color: #1a2642;
-            border: 1px solid #28385e;
-            border-radius: 10px;
-            padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        .subject-title {
-            font-size: 15px;
-            font-weight: 700;
-            color: #f8fafc;
-            margin-bottom: 8px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-        }
-        .subject-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
             gap: 8px;
-            margin-top: 8px;
-        }
-        .sub-metric {
-            background-color: #131b2e;
-            border-radius: 6px;
-            padding: 6px 8px;
-            text-align: center;
-        }
-        .sub-metric-label {
-            font-size: 9px;
-            text-transform: uppercase;
-            color: #94a3b8;
-            font-weight: 700;
-        }
-        .sub-metric-val {
-            font-size: 13px;
-            color: #f8fafc;
-            font-weight: 700;
-            margin-top: 2px;
         }
 
-        /* Profile Details Badges */
-        .profile-badge {
-            background-color: #1a2642;
-            border: 1px solid #28385e;
-            border-radius: 8px;
-            padding: 12px 16px;
-            margin-bottom: 10px;
-        }
-        .profile-label {
-            font-size: 10px;
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+        /* Status Pills */
+        .status-pill-green {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
             font-weight: 700;
-            display: block;
-            margin-bottom: 2px;
         }
-        .profile-val {
-            font-size: 15px;
-            color: #f8fafc;
+        .status-pill-red {
+            background: rgba(244, 63, 94, 0.15);
+            color: #fb7185;
+            border: 1px solid rgba(244, 63, 94, 0.3);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
             font-weight: 700;
+        }
+
+        /* Clean Table Overrides */
+        .stDataFrame {
+            border-radius: 12px !important;
+            overflow: hidden !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -158,7 +135,7 @@ def run_ml_pipeline():
     excel_path = "data/Subject_Analytics_Dataset_200_Students.xlsx"
     
     if not os.path.exists(excel_path):
-        st.error(f"⚠️ Dataset not found at '{excel_path}'. Please ensure the file is placed inside the 'data' directory.")
+        st.error(f"⚠️ Dataset not found at '{excel_path}'. Please place the file in 'data/'.")
         st.stop()
 
     try:
@@ -217,13 +194,22 @@ def run_ml_pipeline():
 
 df, rf_model, rf_report, lr_report, conf_matrix, feature_cols = run_ml_pipeline()
 
-# --- Top Navigation & Selection Bar ---
+# --- Top Header & Controls ---
+st.markdown("""
+    <div class="hero-banner">
+        <div>
+            <div class="hero-title">🎓 AI STUDENT PERFORMANCE DESK</div>
+            <div class="hero-subtitle">Machine Learning Academic Risk Prediction & Performance Analytics</div>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
+
 nav_col, sel_col = st.columns([1.6, 1.4])
 
 with nav_col:
     selected_section = st.radio(
-        "Navigation",
-        ["📋 Student Performance Desk", "📊 Analytics & ML Insights", "🏠 Institutional Overview"],
+        "Dashboard Navigation",
+        ["📋 Student Overview", "📊 Analytics & ML Insights", "🏠 Institutional Summary"],
         index=0,
         horizontal=True
     )
@@ -234,13 +220,13 @@ with sel_col:
     selected_student_label = st.selectbox("Select Student Profile", options=student_options["Label"].tolist(), index=0)
     selected_student_id = selected_student_label.split(" — ")[0]
 
-st.markdown("<hr style='margin: 10px 0 20px 0; border-color: #1e293b;'>", unsafe_allow_html=True)
+st.markdown("<hr style='border-color: rgba(255,255,255,0.08); margin: 16px 0 24px 0;'>", unsafe_allow_html=True)
 
 
 # ==========================================
-# SECTION 1: STUDENT PERFORMANCE DESK
+# SECTION 1: CREATIVE STUDENT OVERVIEW
 # ==========================================
-if selected_section == "📋 Student Performance Desk":
+if selected_section == "📋 Student Overview":
     student_df = df[df["Student_ID"] == selected_student_id]
     student_name = student_df["Student_Name"].iloc[0]
     student_department = student_df["Department"].iloc[0]
@@ -254,241 +240,189 @@ if selected_section == "📋 Student Performance Desk":
     ml_risk_prob = student_df["ML_Risk_Probability"].mean()
     ml_requires_attention = ml_risk_prob >= 0.5
 
-    # Standardized 4 KPI Metrics Row
-    m1, m2, m3, m4 = st.columns(4)
-    with m1:
+    # Top KPI Glass Cards
+    k1, k2, k3, k4 = st.columns(4)
+    with k1:
         st.markdown(f"""
-            <div class='metric-card-primary'>
-                <div class='metric-title'>Selected Student ID</div>
-                <div class='metric-value'>{selected_student_id}</div>
+            <div class="glass-card" style="border-left: 4px solid #38bdf8;">
+                <div class="card-label">Student ID</div>
+                <div class="card-value">{selected_student_id}</div>
+                <div style="font-size:12px; color:#94a3b8; margin-top:2px;">{student_name}</div>
             </div>
         """, unsafe_allow_html=True)
-    with m2:
+    with k2:
         st.markdown(f"""
-            <div class='metric-card'>
-                <div class='metric-title'>Department / Sem</div>
-                <div class='metric-value' style='font-size:20px;'>{student_department} (S{student_semester})</div>
+            <div class="glass-card" style="border-left: 4px solid #818cf8;">
+                <div class="card-label">Department / Sem</div>
+                <div class="card-value">{student_department}</div>
+                <div style="font-size:12px; color:#94a3b8; margin-top:2px;">Semester {student_semester}</div>
             </div>
         """, unsafe_allow_html=True)
-    with m3:
+    with k3:
         st.markdown(f"""
-            <div class='metric-card'>
-                <div class='metric-title'>Calculated CGPA</div>
-                <div class='metric-value'>{cgpa} / 10</div>
+            <div class="glass-card" style="border-left: 4px solid #c084fc;">
+                <div class="card-label">Calculated GPA</div>
+                <div class="card-value">{cgpa} <span style="font-size:14px; color:#64748b;">/ 10</span></div>
+                <div style="font-size:12px; color:#94a3b8; margin-top:2px;">Avg Score: {avg_score:.1f}</div>
             </div>
         """, unsafe_allow_html=True)
-    with m4:
-        risk_color = "#f87171" if ml_requires_attention else "#34d399"
-        risk_text = "Attention Required" if ml_requires_attention else "Stable Standing"
+    with k4:
+        status_html = "<span class='status-pill-red'>⚠️ ATTENTION REQUIRED</span>" if ml_requires_attention else "<span class='status-pill-green'>✅ STABLE STANDING</span>"
         st.markdown(f"""
-            <div class='metric-card'>
-                <div class='metric-title'>ML Risk Status</div>
-                <div class='metric-value' style='font-size:16px; color:{risk_color};'>{risk_text}</div>
+            <div class="glass-card" style="border-left: 4px solid {'#f43f5e' if ml_requires_attention else '#10b981'};">
+                <div class="card-label">ML Risk Status</div>
+                <div style="margin-top:8px;">{status_html}</div>
+                <div style="font-size:12px; color:#94a3b8; margin-top:8px;">Risk Probability: <b>{ml_risk_prob:.2f}</b></div>
             </div>
         """, unsafe_allow_html=True)
 
-    # Standardized Layout Grid (Profile Details vs Sleek Subject Cards Grid)
-    col_left, col_right = st.columns([1.2, 2.8])
+    st.markdown("<br>", unsafe_allow_html=True)
 
-    with col_left:
-        st.markdown("<div class='content-box'>", unsafe_allow_html=True)
-        st.markdown("<div class='box-header'>👤 Student Profile</div>", unsafe_allow_html=True)
-        
-        st.image(f"https://api.dicebear.com/7.x/avataaars/svg?seed={student_name}", width=90)
-        st.markdown(f"<h4 style='margin: 8px 0 2px 0; color: #f8fafc;'>{student_name}</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color: #94a3b8; font-size: 12px; margin-bottom: 16px;'>Enrolled Student Record</p>", unsafe_allow_html=True)
-
-        st.markdown(f"""
-            <div class='profile-badge'>
-                <span class='profile-label'>Attendance Rate</span>
-                <span class='profile-val'>{avg_attendance:.1f}%</span>
-            </div>
-            <div class='profile-badge'>
-                <span class='profile-label'>Course Pass Rate</span>
-                <span class='profile-val'>{pass_rate:.1f}%</span>
-            </div>
-            <div class='profile-badge'>
-                <span class='profile-label'>Performance Trend</span>
-                <span class='profile-val'>{student_df['performance_trend'].iloc[0]}</span>
-            </div>
-        """, unsafe_allow_html=True)
+    # Conditional AI Advisory Alert (Only shows if flagged)
+    flagged_subjects = student_df[student_df["ML_Risk_Probability"] >= 0.5]
+    if len(flagged_subjects) > 0:
+        st.markdown("<div class='container-box' style='border-left: 4px solid #f43f5e;'>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header' style='color:#fb7185;'>⚠️ AI Academic Intervention Advisory</div>", unsafe_allow_html=True)
+        for idx, row in flagged_subjects.iterrows():
+            st.error(f"Module **{row['Subject']}** flagged with risk probability `{row['ML_Risk_Probability']:.2f}`. Low midterm or quiz trends detected.")
         st.markdown("</div>", unsafe_allow_html=True)
 
-    with col_right:
-        st.markdown("<div class='content-box'>", unsafe_allow_html=True)
-        st.markdown("<div class='box-header'>📚 Subject Analytics Matrix (Sleek Cards)</div>", unsafe_allow_html=True)
+    # Main Grid: Radar Chart + Progression Journey vs Matrix
+    row1_left, row1_right = st.columns([1.3, 1.7])
+
+    with row1_left:
+        st.markdown("<div class='container-box'>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>🕸️ Subject Competency Radar</div>", unsafe_allow_html=True)
         
-        for idx, row in student_df.iterrows():
-            subj_name = row["Subject"]
-            quiz = row["Quiz_Score"]
-            assignment = row["Assignment_Score"]
-            midterm = row["Midterm_Marks"]
-            final = row["Final_Marks"]
-            grade = row["Grade"]
-            prob = row["ML_Risk_Probability"]
-            status_badge = "⚠️ Flagged" if prob >= 0.5 else "✅ Stable"
-            badge_color = "#f87171" if prob >= 0.5 else "#34d399"
-            
-            st.markdown(f"""
-                <div class='subject-card'>
-                    <div class='subject-title'>
-                        <span>📖 {subj_name}</span>
-                        <span>
-                            <span style='font-size:12px; color:#94a3b8; margin-right:8px;'>Grade: <b>{grade}</b></span>
-                            <span style='font-size:11px; background:#131b2e; padding:3px 8px; border-radius:6px; color:{badge_color}; border:1px solid {badge_color}50;'>{status_badge}</span>
-                        </span>
-                    </div>
-                    <div class='subject-grid'>
-                        <div class='sub-metric'>
-                            <div class='sub-metric-label'>Quiz</div>
-                            <div class='sub-metric-val'>{quiz}</div>
-                        </div>
-                        <div class='sub-metric'>
-                            <div class='sub-metric-label'>Assignment</div>
-                            <div class='sub-metric-val'>{assignment}</div>
-                        </div>
-                        <div class='sub-metric'>
-                            <div class='sub-metric-label'>Midterm</div>
-                            <div class='sub-metric-val'>{midterm}</div>
-                        </div>
-                        <div class='sub-metric'>
-                            <div class='sub-metric-label'>Final</div>
-                            <div class='sub-metric-val'>{final}</div>
-                        </div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-            
+        # Plotly Radar / Spider Chart
+        categories = student_df["Subject"].tolist()
+        fig_radar = go.Figure()
+
+        fig_radar.add_trace(go.Scatterpolar(
+            r=student_df["Final_Marks"].tolist(),
+            theta=categories,
+            fill='toself',
+            name='Final Marks',
+            line_color='#38bdf8',
+            fillcolor='rgba(56, 189, 248, 0.25)'
+        ))
+        fig_radar.add_trace(go.Scatterpolar(
+            r=student_df["Midterm_Marks"].tolist(),
+            theta=categories,
+            fill='toself',
+            name='Midterm Marks',
+            line_color='#c084fc',
+            fillcolor='rgba(192, 132, 252, 0.15)'
+        ))
+
+        fig_radar.update_layout(
+            polar=dict(
+                radialaxis=dict(visible=True, range=[0, 100], gridcolor='#1e293b'),
+                angularaxis=dict(gridcolor='#1e293b', tickfont=dict(color='#f1f5f9', size=11))
+            ),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            margin=dict(l=30, r=30, t=20, b=20),
+            height=320,
+            showlegend=True,
+            legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5, font=dict(color='#f1f5f9'))
+        )
+        st.plotly_chart(fig_radar, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Standardized Lower Grid (Sleek Subject Score Comparison Cards vs AI Recommendation Engine)
-    low_1, low_2 = st.columns(2)
-
-    with low_1:
-        st.markdown("<div class='content-box'>", unsafe_allow_html=True)
-        st.markdown("<div class='box-header'>📊 Subject Score Comparison (Sleek Cards)</div>", unsafe_allow_html=True)
+    with row1_right:
+        st.markdown("<div class='container-box'>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>📈 Assessment Score Progression Journey</div>", unsafe_allow_html=True)
         
-        for idx, row in student_df.iterrows():
-            subj_name = row["Subject"]
-            quiz = row["Quiz_Score"]
-            assignment = row["Assignment_Score"]
-            midterm = row["Midterm_Marks"]
-            final = row["Final_Marks"]
-            
-            st.markdown(f"""
-                <div class='subject-card'>
-                    <div class='subject-title' style='font-size:13px; color:#94a3b8;'>
-                        <span>📈 {subj_name} — Assessment Spread</span>
-                    </div>
-                    <div class='subject-grid'>
-                        <div class='sub-metric'>
-                            <div class='sub-metric-label'>Quiz</div>
-                            <div class='sub-metric-val' style='color:#60a5fa;'>{quiz}</div>
-                        </div>
-                        <div class='sub-metric'>
-                            <div class='sub-metric-label'>Assignment</div>
-                            <div class='sub-metric-val' style='color:#3b82f6;'>{assignment}</div>
-                        </div>
-                        <div class='sub-metric'>
-                            <div class='sub-metric-label'>Midterm</div>
-                            <div class='sub-metric-val' style='color:#2563eb;'>{midterm}</div>
-                        </div>
-                        <div class='sub-metric'>
-                            <div class='sub-metric-label'>Final</div>
-                            <div class='sub-metric-val' style='color:#1d4ed8;'>{final}</div>
-                        </div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-            
+        # Transform data for progression line plot
+        prog_df = student_df.melt(
+            id_vars=["Subject"], 
+            value_vars=["Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks"],
+            var_name="Evaluation Stage", 
+            value_name="Score"
+        )
+        prog_df["Evaluation Stage"] = prog_df["Evaluation Stage"].str.replace("_", " ").str.title()
+
+        fig_prog = px.line(
+            prog_df, 
+            x="Evaluation Stage", 
+            y="Score", 
+            color="Subject", 
+            markers=True,
+            color_discrete_sequence=["#38bdf8", "#818cf8", "#c084fc", "#f43f5e", "#10b981"]
+        )
+        fig_prog.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#f1f5f9"),
+            height=320,
+            margin=dict(l=10, r=10, t=10, b=10),
+            xaxis=dict(gridcolor='#1e293b'),
+            yaxis=dict(gridcolor='#1e293b', range=[0, 105]),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        st.plotly_chart(fig_prog, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    with low_2:
-        st.markdown("<div class='content-box'>", unsafe_allow_html=True)
-        st.markdown("<div class='box-header'>💡 AI & Machine Learning Advisory Engine</div>", unsafe_allow_html=True)
-        
-        flagged_subjects = student_df[student_df["ML_Risk_Probability"] >= 0.5]
-        
-        if len(flagged_subjects) > 0:
-            for idx, row in flagged_subjects.iterrows():
-                prob = row["ML_Risk_Probability"]
-                subj = row["Subject"]
-                st.error(f"⚠️ **{subj}** (Risk Index: `{prob:.2f}`)\n\n*Action Required:* Trailing assessment scores or low attendance recorded. Faculty advisor review recommended.")
-        else:
-            st.success("✅ **Stable Standing:** All enrolled subjects are meeting academic performance benchmarks. No active interventions or recommendations required.")
-        
-        st.markdown("</div>", unsafe_allow_html=True)
+    # Unified Subject Analytics Matrix
+    st.markdown("<div class='container-box'>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header'>📚 Complete Subject Performance Matrix</div>", unsafe_allow_html=True)
+    
+    matrix_df = student_df[["Subject", "Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks", "Grade", "ML_Risk_Probability"]].copy()
+    matrix_df["ML Risk Status"] = np.where(matrix_df["ML_Risk_Probability"] >= 0.5, "⚠️ Flagged", "✅ Stable")
+    matrix_df = matrix_df[["Subject", "Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks", "Grade", "ML Risk Status"]]
+    matrix_df.columns = ["Subject Module", "Attendance %", "Quiz Score", "Assignment", "Midterm", "Final Marks", "Grade", "ML Status"]
+    
+    st.dataframe(matrix_df, use_container_width=True, hide_index=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ==========================================
 # SECTION 2: ANALYTICS & ML INSIGHTS
 # ==========================================
 elif selected_section == "📊 Analytics & ML Insights":
-    s1, s2, s3, s4, s5 = st.columns(5)
-    with s1:
-        st.markdown(f"""
-            <div class='metric-card-primary'>
-                <div class='metric-title'>Total Cohort</div>
-                <div class='metric-value'>{df['Student_ID'].nunique():,}</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with s2:
-        st.markdown(f"""
-            <div class='metric-card'>
-                <div class='metric-title'>Average Marks</div>
-                <div class='metric-value'>{df['Final_Marks'].mean():.2f}</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with s3:
-        st.markdown(f"""
-            <div class='metric-card'>
-                <div class='metric-title'>Pass Rate</div>
-                <div class='metric-value'>{(df['Final_Marks'] >= 50).mean()*100:.1f}%</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with s4:
-        st.markdown(f"""
-            <div class='metric-card'>
-                <div class='metric-title'>Flagged Risk</div>
-                <div class='metric-value'>{df['ML_Attention_Predicted'].sum()}</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with s5:
-        st.markdown(f"""
-            <div class='metric-card'>
-                <div class='metric-title'>Departments</div>
-                <div class='metric-value'>{df['Department'].nunique()}</div>
-            </div>
-        """, unsafe_allow_html=True)
+    st.markdown("### 📊 Cohort Performance & Machine Learning Verification")
+    
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.markdown(f"<div class='glass-card'><div class='card-label'>Total Cohort</div><div class='card-value'>{df['Student_ID'].nunique():,}</div></div>", unsafe_allow_html=True)
+    with c2:
+        st.markdown(f"<div class='glass-card'><div class='card-label'>Average Final Mark</div><div class='card-value'>{df['Final_Marks'].mean():.1f}</div></div>", unsafe_allow_html=True)
+    with c3:
+        st.markdown(f"<div class='glass-card'><div class='card-label'>Pass Rate</div><div class='card-value'>{(df['Final_Marks'] >= 50).mean()*100:.1f}%</div></div>", unsafe_allow_html=True)
+    with c4:
+        st.markdown(f"<div class='glass-card'><div class='card-label'>Total Flagged Students</div><div class='card-value'>{df['ML_Attention_Predicted'].sum()}</div></div>", unsafe_allow_html=True)
 
-    c_left, c_right = st.columns([2, 1])
-    with c_left:
-        st.markdown("<div class='content-box'>", unsafe_allow_html=True)
-        st.markdown("<div class='box-header'>📈 Departmental Score Trends vs Target Benchmarks</div>", unsafe_allow_html=True)
-        dept_trend = df.groupby("Department")[["Midterm_Marks", "Final_Marks"]].mean().reset_index()
-        fig_trend = px.bar(
-            dept_trend, x="Department", y=["Midterm_Marks", "Final_Marks"],
-            barmode="group", color_discrete_sequence=["#2563eb", "#93c5fd"]
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    g1, g2 = st.columns([2, 1])
+    with g1:
+        st.markdown("<div class='container-box'>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>🏛️ Departmental Average Score Benchmarks</div>", unsafe_allow_html=True)
+        dept_avg = df.groupby("Department")[["Midterm_Marks", "Final_Marks"]].mean().reset_index()
+        fig_dept = px.bar(
+            dept_avg, x="Department", y=["Midterm_Marks", "Final_Marks"],
+            barmode="group", color_discrete_sequence=["#38bdf8", "#818cf8"]
         )
-        fig_trend.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#f8fafc"), height=290, margin=dict(t=10, b=10, l=10, r=10))
-        st.plotly_chart(fig_trend, use_container_width=True)
+        fig_dept.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#f1f5f9"), height=280, yaxis=dict(gridcolor='#1e293b'))
+        st.plotly_chart(fig_dept, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    with c_right:
-        st.markdown("<div class='content-box'>", unsafe_allow_html=True)
-        st.markdown("<div class='box-header'>🍩 Attendance Risk Distribution</div>", unsafe_allow_html=True)
+    with g2:
+        st.markdown("<div class='container-box'>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>🍩 Attendance Risk Split</div>", unsafe_allow_html=True)
         att_cats = np.where(df["Attendance"] >= 75, "Good (≥75%)", "Low (<75%)")
         att_df = pd.Series(att_cats).value_counts().reset_index()
         att_df.columns = ["Status", "Count"]
-        fig_donut = px.pie(att_df, values="Count", names="Status", hole=0.65, color_discrete_sequence=["#2563eb", "#ef4444"])
-        fig_donut.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#f8fafc"), height=290, margin=dict(t=10, b=10, l=10, r=10), showlegend=False)
+        fig_donut = px.pie(att_df, values="Count", names="Status", hole=0.65, color_discrete_sequence=["#10b981", "#f43f5e"])
+        fig_donut.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#f1f5f9"), height=280, showlegend=False)
         st.plotly_chart(fig_donut, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    m_col1, m_col2 = st.columns(2)
-    with m_col1:
-        st.markdown("<div class='content-box'>", unsafe_allow_html=True)
-        st.markdown("<div class='box-header'>🌲 scikit-learn Model Evaluation (Slide 6)</div>", unsafe_allow_html=True)
+    m1, m2 = st.columns(2)
+    with m1:
+        st.markdown("<div class='container-box'>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>🌲 Random Forest vs Logistic Regression Metrics</div>", unsafe_allow_html=True)
         rf_metrics_df = pd.DataFrame({
             "Class": ["No Risk (0)", "Requires Attention (1)"],
             "Precision": [rf_report['0']['precision'], rf_report['1']['precision']],
@@ -498,52 +432,57 @@ elif selected_section == "📊 Analytics & ML Insights":
         st.dataframe(rf_metrics_df.style.format(precision=2), use_container_width=True, hide_index=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    with m_col2:
-        st.markdown("<div class='content-box'>", unsafe_allow_html=True)
-        st.markdown("<div class='box-header'>🔍 Random Forest Feature Importances (Slide 11)</div>", unsafe_allow_html=True)
+    with m2:
+        st.markdown("<div class='container-box'>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>🔍 Random Forest Feature Importance Ranking</div>", unsafe_allow_html=True)
         feature_importances = pd.DataFrame({
             "Academic Feature": feature_cols,
             "Importance Score": rf_model.feature_importances_
         }).sort_values(by="Importance Score", ascending=True)
+        
         fig_importance = px.bar(
             feature_importances, x="Importance Score", y="Academic Feature",
             orientation="h", color="Importance Score", color_continuous_scale="Purples"
         )
-        fig_importance.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#f8fafc"), height=195, margin=dict(t=10, b=10, l=10, r=10), showlegend=False)
+        fig_importance.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#f1f5f9"), height=195, margin=dict(t=10, b=10, l=10, r=10), showlegend=False, xaxis=dict(gridcolor='#1e293b'))
         st.plotly_chart(fig_importance, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ==========================================
-# SECTION 3: INSTITUTIONAL OVERVIEW
+# SECTION 3: INSTITUTIONAL SUMMARY
 # ==========================================
-elif selected_section == "🏠 Institutional Overview":
+elif selected_section == "🏠 Institutional Summary":
+    st.markdown("### 🏠 Institutional Summary Dashboard")
+    
     k1, k2, k3, k4 = st.columns(4)
     with k1:
-        st.markdown(f"<div class='metric-card'><div class='metric-title'>Total Students</div><div class='metric-value'>{df['Student_ID'].nunique()}</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='glass-card'><div class='card-label'>Total Enrolled Students</div><div class='card-value'>{df['Student_ID'].nunique()}</div></div>", unsafe_allow_html=True)
     with k2:
-        st.markdown(f"<div class='metric-card'><div class='metric-title'>Total Faculty</div><div class='metric-value'>5</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='glass-card'><div class='card-label'>Faculty Strength</div><div class='card-value'>5</div></div>", unsafe_allow_html=True)
     with k3:
-        st.markdown(f"<div class='metric-card'><div class='metric-title'>Subjects Offered</div><div class='metric-value'>{df['Subject'].nunique()}</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='glass-card'><div class='card-label'>Offered Modules</div><div class='card-value'>{df['Subject'].nunique()}</div></div>", unsafe_allow_html=True)
     with k4:
-        st.markdown(f"<div class='metric-card'><div class='metric-title'>Average Mark</div><div class='metric-value'>{df['Final_Marks'].mean():.2f}</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='glass-card'><div class='card-label'>Overall Average Mark</div><div class='card-value'>{df['Final_Marks'].mean():.2f}</div></div>", unsafe_allow_html=True)
 
+    st.markdown("<br>", unsafe_allow_html=True)
+    
     c_left, c_right = st.columns(2)
     with c_left:
-        st.markdown("<div class='content-box'>", unsafe_allow_html=True)
-        st.markdown("<div class='box-header'>📊 Average Marks by Department</div>", unsafe_allow_html=True)
+        st.markdown("<div class='container-box'>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>📊 Department Performance Breakdown</div>", unsafe_allow_html=True)
         dept_avg = df.groupby("Department")["Final_Marks"].mean().reset_index()
-        fig_dept = px.bar(dept_avg, x="Department", y="Final_Marks", color="Department", color_discrete_sequence=["#2563eb", "#3b82f6", "#60a5fa", "#93c5fd"])
-        fig_dept.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#f8fafc"), showlegend=False, height=280)
+        fig_dept = px.bar(dept_avg, x="Department", y="Final_Marks", color="Department", color_discrete_sequence=["#38bdf8", "#818cf8", "#c084fc", "#f43f5e"])
+        fig_dept.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#f1f5f9"), showlegend=False, height=280, yaxis=dict(gridcolor='#1e293b'))
         st.plotly_chart(fig_dept, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     with c_right:
-        st.markdown("<div class='content-box'>", unsafe_allow_html=True)
-        st.markdown("<div class='box-header'>🍩 Risk Distribution Breakdown</div>", unsafe_allow_html=True)
-        risk_counts = df["ML_Attention_Predicted"].map({1: "Requires Attention", 0: "Stable"}).value_counts().reset_index()
+        st.markdown("<div class='container-box'>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>🍩 Overall Academic Standing Distribution</div>", unsafe_allow_html=True)
+        risk_counts = df["ML_Attention_Predicted"].map({1: "Requires Attention", 0: "Stable Standing"}).value_counts().reset_index()
         risk_counts.columns = ["Status", "Count"]
-        fig_donut = px.pie(risk_counts, values="Count", names="Status", hole=0.5, color_discrete_sequence=["#34d399", "#f87171"])
-        fig_donut.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#f8fafc"), height=280)
+        fig_donut = px.pie(risk_counts, values="Count", names="Status", hole=0.5, color_discrete_sequence=["#10b981", "#f43f5e"])
+        fig_donut.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#f1f5f9"), height=280)
         st.plotly_chart(fig_donut, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
