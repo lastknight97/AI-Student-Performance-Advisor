@@ -17,30 +17,31 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- UI/UX Sleek Custom CSS ---
+# --- UI/UX Sleek Dark Theme Custom CSS ---
 st.markdown("""
     <style>
         .stApp {
-            background-color: #f8fafc !important;
-            color: #0f172a !important;
+            background-color: #0b0e14 !important;
+            color: #f8fafc !important;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
         
+        /* Stat & Metric Cards */
         .stat-card {
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0;
+            background-color: #121824;
+            border: 1px solid #1f293d; you
             border-radius: 14px;
             padding: 18px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             margin-bottom: 16px;
         }
         .stat-card-blue {
-            background: linear-gradient(135deg, #0052FF 0%, #1d4ed8 100%);
+            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
             color: #ffffff;
             border: none;
             border-radius: 14px;
             padding: 18px;
-            box-shadow: 0 6px 16px rgba(0, 82, 255, 0.25);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
             margin-bottom: 16px;
         }
         .stat-card label, .stat-card-blue label {
@@ -49,7 +50,7 @@ st.markdown("""
             font-weight: 700;
             display: block;
         }
-        .stat-card label { color: #64748b; }
+        .stat-card label { color: #94a3b8; }
         .stat-card-blue label { color: #bfdbfe; }
         
         .stat-card h3, .stat-card-blue h3 {
@@ -57,36 +58,43 @@ st.markdown("""
             font-size: 22px;
             font-weight: 800;
         }
-        .stat-card h3 { color: #0f172a; }
+        .stat-card h3 { color: #f8fafc; }
         .stat-card-blue h3 { color: #ffffff; }
 
+        /* Chart & Content Cards */
         .chart-card {
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0;
+            background-color: #121824;
+            border: 1px solid #1f293d;
             border-radius: 16px;
             padding: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             margin-bottom: 20px;
         }
 
+        /* Profile Details Badges */
         .profile-badge {
-            background-color: #f1f5f9;
-            border: 1px solid #e2e8f0;
+            background-color: #1a2234;
+            border: 1px solid #283548;
             border-radius: 10px;
             padding: 10px 14px;
             margin-bottom: 8px;
         }
         .profile-badge label {
             font-size: 10px;
-            color: #64748b;
+            color: #94a3b8;
             text-transform: uppercase;
             font-weight: 700;
             display: block;
         }
         .profile-badge span {
             font-size: 14px;
-            color: #0f172a;
+            color: #f8fafc;
             font-weight: 700;
+        }
+        
+        /* Force text visibility across widgets */
+        h1, h2, h3, h4, h5, h6, span, label, p {
+            color: #f8fafc !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -184,7 +192,6 @@ if selected_section == "📋 Student Performance Desk":
     student_name = student_df["Student_Name"].iloc[0]
     student_department = student_df["Department"].iloc[0]
     student_semester = student_df["Semester"].iloc[0]
-    student_gender = student_df["Gender"].iloc.get(0, "N/A") if "Gender" in student_df.columns else "N/A"
     
     avg_score = student_df["Final_Marks"].mean()
     avg_attendance = student_df["Attendance"].mean()
@@ -209,7 +216,7 @@ if selected_section == "📋 Student Performance Desk":
             <div class='stat-card'>
                 <label>Department & Semester</label>
                 <h3>{student_department}</h3>
-                <p style='margin:2px 0 0 0; font-size:13px; color:#64748b; font-weight:600;'>Semester {student_semester}</p>
+                <p style='margin:2px 0 0 0; font-size:13px; color:#94a3b8; font-weight:600;'>Semester {student_semester}</p>
             </div>
         """, unsafe_allow_html=True)
     with top_c3:
@@ -217,17 +224,17 @@ if selected_section == "📋 Student Performance Desk":
             <div class='stat-card'>
                 <label>Overall GPA / Score</label>
                 <h3>{cgpa} / 10.0</h3>
-                <p style='margin:2px 0 0 0; font-size:13px; color:#64748b; font-weight:600;'>Avg Mark: {avg_score:.2f}</p>
+                <p style='margin:2px 0 0 0; font-size:13px; color:#94a3b8; font-weight:600;'>Avg Mark: {avg_score:.2f}</p>
             </div>
         """, unsafe_allow_html=True)
     with top_c4:
-        risk_color_txt = "#ef4444" if ml_requires_attention else "#10b981"
+        risk_color_txt = "#f87171" if ml_requires_attention else "#34d399"
         risk_label_txt = "Attention Required" if ml_requires_attention else "Stable Standing"
         st.markdown(f"""
             <div class='stat-card'>
                 <label>ML Risk Assessment</label>
                 <h3 style='color: {risk_color_txt}; font-size:18px;'>{risk_label_txt}</h3>
-                <p style='margin:2px 0 0 0; font-size:13px; color:#64748b; font-weight:600;'>Probability: {ml_risk_prob:.2f}</p>
+                <p style='margin:2px 0 0 0; font-size:13px; color:#94a3b8; font-weight:600;'>Probability: {ml_risk_prob:.2f}</p>
             </div>
         """, unsafe_allow_html=True)
 
@@ -239,8 +246,8 @@ if selected_section == "📋 Student Performance Desk":
     with grid_left:
         st.markdown("<div class='chart-card' style='text-align: center;'>", unsafe_allow_html=True)
         st.image(f"https://api.dicebear.com/7.x/avataaars/svg?seed={student_name}", width=110)
-        st.markdown(f"<h4 style='margin: 8px 0 2px 0; color: #0f172a;'>{student_name}</h4>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color: #64748b; font-size: 12px; margin-bottom: 14px;'>Student Unique File Profile</p>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='margin: 8px 0 2px 0; color: #f8fafc;'>{student_name}</h4>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color: #94a3b8; font-size: 12px; margin-bottom: 14px;'>Student Unique File Profile</p>", unsafe_allow_html=True)
         
         st.markdown(f"<div class='profile-badge'><label>Attendance Average</label><span>{avg_attendance:.1f}%</span></div>", unsafe_allow_html=True)
         st.markdown(f"<div class='profile-badge'><label>Course Pass Rate</label><span>{pass_rate:.1f}%</span></div>", unsafe_allow_html=True)
@@ -272,11 +279,11 @@ if selected_section == "📋 Student Performance Desk":
             student_df, y="Subject",
             x=["Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks"],
             barmode="group", orientation="h",
-            color_discrete_sequence=["#93c5fd", "#60a5fa", "#3b82f6", "#0052FF"]
+            color_discrete_sequence=["#93c5fd", "#60a5fa", "#3b82f6", "#2563eb"]
         )
         fig_bar.update_layout(
             paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            height=280, margin=dict(t=10, b=10, l=10, r=10),
+            font=dict(color="#f8fafc"), height=280, margin=dict(t=10, b=10, l=10, r=10),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
         st.plotly_chart(fig_bar, use_container_width=True)
@@ -324,9 +331,9 @@ elif selected_section == "📊 Analytics & ML Insights":
         dept_trend = df.groupby("Department")[["Midterm_Marks", "Final_Marks"]].mean().reset_index()
         fig_trend = px.bar(
             dept_trend, x="Department", y=["Midterm_Marks", "Final_Marks"],
-            barmode="group", color_discrete_sequence=["#0052FF", "#93c5fd"]
+            barmode="group", color_discrete_sequence=["#2563eb", "#93c5fd"]
         )
-        fig_trend.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=300, margin=dict(t=10, b=10, l=10, r=10))
+        fig_trend.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#f8fafc"), height=300, margin=dict(t=10, b=10, l=10, r=10))
         st.plotly_chart(fig_trend, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -336,8 +343,8 @@ elif selected_section == "📊 Analytics & ML Insights":
         att_cats = np.where(df["Attendance"] >= 75, "Good (≥75%)", "Low (<75%)")
         att_df = pd.Series(att_cats).value_counts().reset_index()
         att_df.columns = ["Status", "Count"]
-        fig_donut = px.pie(att_df, values="Count", names="Status", hole=0.65, color_discrete_sequence=["#0052FF", "#ef4444"])
-        fig_donut.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=300, margin=dict(t=10, b=10, l=10, r=10), showlegend=False)
+        fig_donut = px.pie(att_df, values="Count", names="Status", hole=0.65, color_discrete_sequence=["#2563eb", "#ef4444"])
+        fig_donut.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#f8fafc"), height=300, margin=dict(t=10, b=10, l=10, r=10), showlegend=False)
         st.plotly_chart(fig_donut, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -365,9 +372,9 @@ elif selected_section == "📊 Analytics & ML Insights":
         }).sort_values(by="Importance Score", ascending=True)
         fig_importance = px.bar(
             feature_importances, x="Importance Score", y="Academic Feature",
-            orientation="h", color="Importance Score", color_continuous_scale="Blues"
+            orientation="h", color="Importance Score", color_continuous_scale="Purples"
         )
-        fig_importance.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=190, margin=dict(t=10, b=10, l=10, r=10), showlegend=False)
+        fig_importance.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#f8fafc"), height=190, margin=dict(t=10, b=10, l=10, r=10), showlegend=False)
         st.plotly_chart(fig_importance, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -391,8 +398,8 @@ elif selected_section == "🏠 Institutional Overview":
         st.markdown("<div class='chart-card'>", unsafe_allow_html=True)
         st.markdown("##### Average Marks by Department")
         dept_avg = df.groupby("Department")["Final_Marks"].mean().reset_index()
-        fig_dept = px.bar(dept_avg, x="Department", y="Final_Marks", color="Department", color_discrete_sequence=["#0052FF", "#3b82f6", "#60a5fa", "#93c5fd"])
-        fig_dept.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False)
+        fig_dept = px.bar(dept_avg, x="Department", y="Final_Marks", color="Department", color_discrete_sequence=["#2563eb", "#3b82f6", "#60a5fa", "#93c5fd"])
+        fig_dept.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#f8fafc"), showlegend=False)
         st.plotly_chart(fig_dept, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -401,8 +408,8 @@ elif selected_section == "🏠 Institutional Overview":
         st.markdown("##### Risk Distribution Breakdown")
         risk_counts = df["ML_Attention_Predicted"].map({1: "Requires Attention", 0: "Stable"}).value_counts().reset_index()
         risk_counts.columns = ["Status", "Count"]
-        fig_donut = px.pie(risk_counts, values="Count", names="Status", hole=0.5, color_discrete_sequence=["#10b981", "#ef4444"])
-        fig_donut.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        fig_donut = px.pie(risk_counts, values="Count", names="Status", hole=0.5, color_discrete_sequence=["#34d399", "#f87171"])
+        fig_donut.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#f8fafc"))
         st.plotly_chart(fig_donut, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
         
