@@ -16,7 +16,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# --- Custom CSS for Styling, Contrast & Floating Chat Widget ---
+# --- Custom CSS for Styling, Contrast & Round Floating Chat Widget ---
 st.markdown("""
     <style>
         .main { background-color: #f8f9fa; }
@@ -34,7 +34,7 @@ st.markdown("""
         /* Floating Chat Widget Container Styling */
         .floating-chat-container {
             position: fixed;
-            bottom: 90px;
+            bottom: 95px;
             right: 30px;
             width: 400px;
             height: 520px;
@@ -46,6 +46,27 @@ st.markdown("""
             display: flex;
             flex-direction: column;
             border: 1px solid #e5e7eb;
+        }
+        /* Round Floating Action Button (FAB) for Peter */
+        .floating-btn-wrapper {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            z-index: 999999;
+        }
+        div[data-testid="stButton"] button[kind="primary"] {
+            border-radius: 50% !important;
+            width: 60px !important;
+            height: 60px !important;
+            padding: 0px !important;
+            background-color: #4f46e5 !important;
+            color: white !important;
+            font-size: 24px !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+            border: none !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -422,40 +443,26 @@ elif selected_section == "📈 Analytics":
 
 
 # ==========================================
-# FLOATING CHATBOT WIDGET (Bottom Right Corner)
+# FLOATING CHATBOT WIDGET ("PETER")
 # ==========================================
 
-# Initialize chat open state
 if "chat_open" not in st.session_state:
   st.session_state.chat_open = False
 
-# Initialize chat history
 if "messages" not in st.session_state:
   st.session_state.messages = [
-      {"role": "assistant", "content": "👋 Hello educator! Ask me about any student record or type *'recommendations'* to fetch research-backed improvement steps for at-risk learners."}
+      {"role": "assistant", "content": "👋 Hi! I'm **Peter**, your AI Assistant. Ask me about any student record or type *'recommendations'* to fetch research-backed improvement steps!"}
   ]
 
-# Custom CSS for placing the floating toggle button in the bottom right corner
-st.markdown("""
-    <style>
-        .floating-btn-wrapper {
-            position: fixed;
-            bottom: 25px;
-            right: 25px;
-            z-index: 999999;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-# Render the floating toggle button
+# Render the round floating action button in the bottom right corner
 with st.container():
   st.markdown('<div class="floating-btn-wrapper">', unsafe_allow_html=True)
-  if st.button("💬 AI Advisor Chat", key="chat_toggle_btn", type="primary"):
+  if st.button("💬", key="chat_toggle_btn", type="primary"):
     st.session_state.chat_open = not st.session_state.chat_open
     st.rerun()
   st.markdown('</div>', unsafe_allow_html=True)
 
-# Render the floating chat popup window if open
+# Render Peter's chat popup window if open
 if st.session_state.chat_open:
   with st.container():
     st.markdown('<div class="floating-chat-container">', unsafe_allow_html=True)
@@ -463,7 +470,7 @@ if st.session_state.chat_open:
     # Header & Close button
     ch1, ch2 = st.columns([4, 1])
     with ch1:
-      st.markdown("**💬 AI Performance Assistant**")
+      st.markdown("**💬 Peter (AI Advisor)**")
     with ch2:
       if st.button("✖", key="close_chat"):
         st.session_state.chat_open = False
@@ -471,38 +478,37 @@ if st.session_state.chat_open:
         
     st.markdown("---")
     
-    # Chat history display area
+    # Chat history container
     chat_container = st.container(height=340)
     with chat_container:
       for message in st.session_state.messages:
         with st.chat_message(message["role"]):
           st.markdown(message["content"])
 
-    # Chat input box at the bottom of the popup widget
-    if prompt := st.chat_input("Ask about student data or strategies...", key="floating_chat_input"):
+    # Chat input box inside Peter's window
+    if prompt := st.chat_input("Ask Peter about student data or strategies...", key="floating_chat_input"):
       st.session_state.messages.append({"role": "user", "content": prompt})
       
-      # Contextual Query & Research-Backed Strategy Responder
       query_lower = prompt.lower()
       response = ""
 
-      # Querying general research-backed improvement recommendations
+      # Research-backed strategy handler
       if "recommend" in query_lower or "strategy" in query_lower or "improve" in query_lower or "step" in query_lower:
-        response = "🌐 **Evidence-Based Pedagogical Strategies for At-Risk Learners:**\n\n"
-        response += "1. **Targeted Tutoring & Peer Dyads:** Pair students struggling in specific topics with high-performing peers using Class-Wide Peer Tutoring (CWPT).\n"
-        response += "2. **Differentiated & Mastery Learning:** Allow flexible pathways for assignment completion and adjust instructional pacing for key conceptual gaps.\n"
-        response += "3. **Metacognitive Goal Setting:** Have students complete weekly self-evaluation logs to track test preparation and assignment deadlines.\n"
-        response += "4. **Attendance Climate Checks:** For chronically absent students, initiate weekly check-ins or temperature checks with academic counselors."
+        response = "🌐 **Peter's Evidence-Based Strategies for At-Risk Learners:**\n\n"
+        response += "1. **Targeted Tutoring & Peer Dyads:** Pair students with high-performing peers using Class-Wide Peer Tutoring (CWPT).\n"
+        response += "2. **Differentiated Mastery Learning:** Offer flexible assignment completion pathways and formative temperature checks.\n"
+        response += "3. **Metacognitive Goal Setting:** Encourage weekly self-evaluation logs to track test prep and deadlines.\n"
+        response += "4. **Attendance Monitoring:** Establish weekly counselor check-ins for chronically absent students."
 
-      # Querying high risk summary
+      # High risk summary handler
       elif "high" in query_lower and ("risk" in query_lower or "student" in query_lower or "status" in query_lower):
         high_risk_students = df[df["Risk_Level"] == "High"][["Student_ID", "Student_Name", "Department", "Subject"]].drop_duplicates().head(5)
         response = "🚨 **High Risk Students Summary:**\n\nHere are students currently flagged at **High** risk:\n"
         for idx, row in high_risk_students.iterrows():
           response += f"- **{row['Student_Name']}** (ID: {row['Student_ID']}, Dept: {row['Department']})\n"
-        response += "\n*Recommended Pedagogical Steps:* Assign targeted tutoring, establish attendance check-ins, and create individualized learning goals."
+        response += "\n*Peter's Recommended Steps:* Assign targeted tutoring, schedule counselor check-ins, and create individualized learning goals."
 
-      # Querying specific student lookup
+      # Specific student lookup handler
       else:
         found_student = None
         for _, row in df.drop_duplicates(subset=["Student_ID"]).iterrows():
@@ -522,13 +528,13 @@ if st.session_state.chat_open:
           response += f"- **Department:** {s_dept}\n- **Overall Status:** {s_risk} Risk\n- **Avg Attendance:** {s_att:.1f}%\n- **Avg Final Marks:** {s_final:.1f}\n\n"
           
           if s_risk == "High":
-            response += "⚠️ **Tailored Intervention Plan:**\n- *Attendance Strategy:* Conduct counselor temperature checks for low attendance.\n- *Academic Strategy:* Assign peer-tutoring dyads and guided assignment practice."
+            response += "⚠️ **Peter's Tailored Plan:**\n- *Attendance:* Conduct counselor check-ins.\n- *Academics:* Assign peer-tutoring dyads and guided assignment practice."
           elif s_risk == "Moderate":
-            response += "⚠️ **Tailored Intervention Plan:**\n- Provide worked examples for midterm topics and encourage weekly goal-setting."
+            response += "⚠️ **Peter's Tailored Plan:**\n- Provide worked examples for midterm topics and encourage weekly goal-setting."
           else:
-            response += "✅ **Tailored Intervention Plan:**\n- Performing well! Maintain current study habits and offer optional enrichment tasks."
+            response += "✅ **Peter's Tailored Plan:**\n- Performing well! Maintain current habits and offer optional enrichment tasks."
         else:
-          response = "I can look up student records and provide research-backed intervention strategies! Try typing a student's name, ID, or ask *" + '"What are recommended steps to improve high risk students?"*'
+          response = "I'm Peter! I can look up student records and provide research-backed strategies. Try typing a student's name, ID, or ask *" + '"What are recommended steps for high risk students?"*'
 
       st.session_state.messages.append({"role": "assistant", "content": response})
       st.rerun()
