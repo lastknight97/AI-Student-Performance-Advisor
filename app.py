@@ -441,4 +441,7 @@ elif selected_section == "🏠 Institutional Overview":
         st.markdown("<div class='box-header'>🍩 Risk Distribution Breakdown</div>", unsafe_allow_html=True)
         risk_counts = df["ML_Attention_Predicted"].map({1: "Requires Attention", 0: "Stable"}).value_counts().reset_index()
         risk_counts.columns = ["Status", "Count"]
-        fig_donut = px.pie(risk_counts, v
+        fig_donut = px.pie(risk_counts, values="Count", names="Status", hole=0.5, color_discrete_sequence=["#34d399", "#f87171"])
+        fig_donut.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#f8fafc"), height=280)
+        st.plotly_chart(fig_donut, use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
