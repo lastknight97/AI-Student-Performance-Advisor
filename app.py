@@ -16,7 +16,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# --- Custom CSS for Styling, Contrast & Strict Bottom-Right Floating Widget ---
+# --- Clean Native Styling ---
 st.markdown("""
     <style>
         .main { background-color: #f8f9fa; }
@@ -31,58 +31,13 @@ st.markdown("""
         .metric-card h2, .metric-card p, .metric-card b {
             color: #1f2937 !important;
         }
-        
-        /* Strict Bottom-Right Floating Chat Popup Window */
-        .floating-chat-container {
-            position: fixed !important;
-            bottom: 90px !important;
-            right: 20px !important;
-            left: auto !important;
-            top: auto !important;
-            width: 360px !important;
-            max-width: calc(100vw - 40px) !important;
-            height: 480px !important;
-            background-color: white !important;
-            border-radius: 12px !important;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important;
-            z-index: 999998 !important;
-            padding: 12px !important;
-            display: flex !important;
-            flex-direction: column !important;
-            border: 1px solid #e5e7eb !important;
-        }
-        
-        /* Strict Bottom-Right Floating Action Button (FAB) for Peter */
-        .floating-btn-wrapper {
-            position: fixed !important;
-            bottom: 20px !important;
-            right: 20px !important;
-            left: auto !important;
-            top: auto !important;
-            z-index: 999999 !important;
-        }
-        
-        /* Circular button styling */
-        .floating-btn-wrapper button {
-            border-radius: 50% !important;
-            width: 55px !important;
-            height: 55px !important;
-            padding: 0px !important;
-            background-color: #4f46e5 !important;
-            color: white !important;
-            font-size: 22px !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
-            border: none !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-        }
     </style>
 """, unsafe_allow_html=True)
 
 # --- Data Loading & Machine Learning Workflow (Slide 6) ---
 @st.cache_resource
 def load_and_evaluate_data():
+  # Step 1: Collect dataset from the data folder[span_0](start_span)[span_0](end_span)
   excel_path = "data/Subject_Analytics_Dataset_200_Students.xlsx"
   
   if not os.path.exists(excel_path):
@@ -95,6 +50,7 @@ def load_and_evaluate_data():
     st.error(f"⚠️ Error reading Excel file: {e}")
     st.stop()
 
+  # Step 2: Clean and validate the data[span_1](start_span)[span_1](end_span)
   df.columns = df.columns.str.strip()
   for col in df.select_dtypes(include=['object']).columns:
     df[col] = df[col].astype(str).str.strip()
@@ -110,6 +66,7 @@ def load_and_evaluate_data():
     st.error(f"❌ Missing columns in Excel file: {missing_cols}")
     st.stop()
 
+  # Step 3 & 4: Explore distributions and engineer meaningful features[span_2](start_span)[span_2](end_span)
   feature_cols = ["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks"]
   X = df[feature_cols]
 
@@ -125,17 +82,21 @@ def load_and_evaluate_data():
 
   y = composite_score.apply(get_target_label)
 
+  # Step 5: Split data into training and testing sets[span_3](start_span)[span_3](end_span)
   X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+  # Step 6: Train Logistic Regression baseline[span_4](start_span)[span_4](end_span)
   lr_baseline = LogisticRegression(random_state=42, max_iter=200)
   lr_baseline.fit(X_train, y_train)
   lr_pred = lr_baseline.predict(X_test)
   lr_report = classification_report(y_test, lr_pred, output_dict=True)
 
+  # Step 7: Train Random Forest classifier[span_5](start_span)[span_5](end_span)
   rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
   rf_model.fit(X_train, y_train)
   rf_pred = rf_model.predict(X_test)
   
+  # Step 8: Calculate precision, recall, F1-score, and confusion matrix[span_6](start_span)[span_6](end_span)
   rf_report = classification_report(y_test, rf_pred, output_dict=True)
   conf_matrix = confusion_matrix(y_test, rf_pred, labels=["High", "Moderate", "Low"])
 
@@ -154,12 +115,12 @@ def load_and_evaluate_data():
 
 df, rf_model, rf_report, lr_report, conf_matrix = load_and_evaluate_data()
 
-# --- Sidebar Navigation (Sections) ---
+# --- Native Sidebar Navigation ---
 st.sidebar.title("🎓 Navigation")
 st.sidebar.markdown("Select a dashboard section below:")
 selected_section = st.sidebar.radio(
     "Go to", 
-    ["📊 Overview", "👤 Student Profile", "📈 Analytics"]
+    ["📊 Overview", "👤 Student Profile", "📈 Analytics", "💬 Peter (AI Advisor)"]
 )
 
 # ==========================================
@@ -233,7 +194,7 @@ if selected_section == "📊 Overview":
   st.dataframe(top_risk_table, use_container_width=True)
 
 # ==========================================
-# SECTION 2: STUDENT PROFILE (Lookup in Main Body)
+# SECTION 2: STUDENT PROFILE
 # ==========================================
 elif selected_section == "👤 Student Profile":
   st.title("👤 Student Profile")
@@ -452,108 +413,76 @@ elif selected_section == "📈 Analytics":
 
 
 # ==========================================
-# FLOATING CHATBOT WIDGET ("PETER")
+# SECTION 4: PETER (AI ADVISOR CHATBOT)
 # ==========================================
+elif selected_section == "💬 Peter (AI Advisor)":
+  st.title("💬 Peter - AI Student Performance Advisor")
+  st.markdown("Ask Peter about individual student records, institutional risk summaries, or evidence-based intervention steps.")
+  st.markdown("---")
 
-if "chat_open" not in st.session_state:
-  st.session_state.chat_open = False
+  if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {"role": "assistant", "content": "👋 Hi! I'm **Peter**, your AI Assistant. Ask me about any student record, look up IDs, or type *'recommendations'* for evidence-based improvement steps!"}
+    ]
 
-if "messages" not in st.session_state:
-  st.session_state.messages = [
-      {"role": "assistant", "content": "👋 Hi! I'm **Peter**, your AI Assistant. Ask me about any student record or type *'recommendations'* for improvement steps!"}
-  ]
+  # Display native chat history
+  for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+      st.markdown(message["content"])
 
-# Render the round floating action button pinned strictly to bottom right
-with st.container():
-  st.markdown('<div class="floating-btn-wrapper">', unsafe_allow_html=True)
-  if st.button("💬", key="chat_toggle_btn", type="primary"):
-    st.session_state.chat_open = not st.session_state.chat_open
-    st.rerun()
-  st.markdown('</div>', unsafe_allow_html=True)
+  # Native chat input
+  if prompt := st.chat_input("Ask Peter about student data or strategies..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    with st.chat_message("user"):
+      st.markdown(prompt)
 
-# Render Peter's chat popup window pinned strictly to bottom right if open
-if st.session_state.chat_open:
-  with st.container():
-    st.markdown('<div class="floating-chat-container">', unsafe_allow_html=True)
-    
-    # Header & Close button
-    ch1, ch2 = st.columns([4, 1])
-    with ch1:
-      st.markdown("**💬 Peter (AI Advisor)**")
-    with ch2:
-      if st.button("✖", key="close_chat"):
-        st.session_state.chat_open = False
-        st.rerun()
+    query_lower = prompt.lower()
+    response = ""
+
+    # Research-backed strategy handler
+    if "recommend" in query_lower or "strategy" in query_lower or "improve" in query_lower or "step" in query_lower:
+      response = "🌐 **Peter's Evidence-Based Pedagogical Strategies:**\n\n"
+      response += "1. **Targeted Tutoring & Peer Dyads:** Pair students struggling with high-performing peers using Class-Wide Peer Tutoring (CWPT).\n"
+      response += "2. **Differentiated Mastery Learning:** Offer flexible assignment completion pathways and formative check-ins.\n"
+      response += "3. **Metacognitive Goal Setting:** Encourage weekly self-evaluation logs to track test preparation.\n"
+      response += "4. **Attendance Climate Checks:** Establish weekly counselor check-ins for chronically absent students."
+
+    # High risk summary handler
+    elif "high" in query_lower and ("risk" in query_lower or "student" in query_lower or "status" in query_lower):
+      high_risk_students = df[df["Risk_Level"] == "High"][["Student_ID", "Student_Name", "Department", "Subject"]].drop_duplicates().head(5)
+      response = "🚨 **High Risk Students Summary:**\n\nHere are students currently flagged at **High** risk:\n"
+      for idx, row in high_risk_students.iterrows():
+        response += f"- **{row['Student_Name']}** (ID: {row['Student_ID']}, Dept: {row['Department']}, Subject: {row['Subject']})\n"
+      response += "\n*Peter's Action Steps:* Assign targeted tutoring, schedule counselor check-ins, and create individualized learning goals."
+
+    # Specific student lookup handler
+    else:
+      found_student = None
+      for _, row in df.drop_duplicates(subset=["Student_ID"]).iterrows():
+        if str(row["Student_ID"]) in query_lower or row["Student_Name"].lower() in query_lower:
+          found_student = row["Student_ID"]
+          break
+      
+      if found_student:
+        s_data = df[df["Student_ID"] == found_student]
+        s_name = s_data["Student_Name"].iloc[0]
+        s_dept = s_data["Department"].iloc[0]
+        s_risk = s_data["Risk_Level"].iloc[0]
+        s_att = s_data["Attendance"].mean()
+        s_final = s_data["Final_Marks"].mean()
+
+        response = f"👤 **Profile: {s_name} (ID: {found_student})**\n"
+        response += f"- **Department:** {s_dept}\n- **Overall Status:** {s_risk} Risk\n- **Avg Attendance:** {s_att:.1f}%\n- **Avg Final Marks:** {s_final:.1f}\n\n"
         
-    st.markdown("---")
-    
-    # Chat history scrollable container
-    chat_container = st.container(height=280)
-    with chat_container:
-      for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-          st.markdown(message["content"])
-
-    # Form-based input to keep the text box securely inside Peter's window
-    with st.form(key="peter_chat_form", clear_on_submit=True):
-      cols_input = st.columns([4, 1])
-      with cols_input[0]:
-        user_text = st.text_input("Prompt Peter...", placeholder="Ask student or strategy...", label_visibility="collapsed")
-      with cols_input[1]:
-        submitted = st.form_submit_button("Send")
-
-      if submitted and user_text:
-        st.session_state.messages.append({"role": "user", "content": user_text})
-        
-        query_lower = user_text.lower()
-        response = ""
-
-        # Research-backed strategy handler
-        if "recommend" in query_lower or "strategy" in query_lower or "improve" in query_lower or "step" in query_lower:
-          response = "🌐 **Peter's Evidence-Based Strategies:**\n\n"
-          response += "1. **Peer Tutoring:** Pair students with high-performing peers.\n"
-          response += "2. **Mastery Learning:** Offer flexible assignment pathways.\n"
-          response += "3. **Goal Setting:** Encourage weekly self-evaluation logs.\n"
-          response += "4. **Attendance Tracking:** Establish counselor check-ins."
-
-        # High risk summary handler
-        elif "high" in query_lower and ("risk" in query_lower or "student" in query_lower or "status" in query_lower):
-          high_risk_students = df[df["Risk_Level"] == "High"][["Student_ID", "Student_Name", "Department"]].drop_duplicates().head(5)
-          response = "🚨 **High Risk Students Summary:**\n"
-          for idx, row in high_risk_students.iterrows():
-            response += f"- **{row['Student_Name']}** (ID: {row['Student_ID']}, Dept: {row['Department']})\n"
-          response += "\n*Peter's Step:* Assign targeted tutoring & counselor check-ins."
-
-        # Specific student lookup handler
+        if s_risk == "High":
+          response += "⚠️ **Peter's Tailored Action Plan:**\n- *Attendance:* Initiate counselor check-ins.\n- *Academics:* Assign peer-tutoring dyads and guided assignment practice."
+        elif s_risk == "Moderate":
+          response += "⚠️ **Peter's Tailored Action Plan:**\n- Provide worked examples for midterm topics and encourage weekly goal-setting."
         else:
-          found_student = None
-          for _, row in df.drop_duplicates(subset=["Student_ID"]).iterrows():
-            if str(row["Student_ID"]) in query_lower or row["Student_Name"].lower() in query_lower:
-              found_student = row["Student_ID"]
-              break
-          
-          if found_student:
-            s_data = df[df["Student_ID"] == found_student]
-            s_name = s_data["Student_Name"].iloc[0]
-            s_dept = s_data["Department"].iloc[0]
-            s_risk = s_data["Risk_Level"].iloc[0]
-            s_att = s_data["Attendance"].mean()
-            s_final = s_data["Final_Marks"].mean()
+          response += "✅ **Peter's Tailored Action Plan:**\n- Performing well! Maintain current habits and offer optional enrichment tasks."
+      else:
+        response = "I'm Peter! Ask about a student name, ID, or type *" + '"recommendations"' + " for pedagogical strategies."
 
-            response = f"👤 **Profile: {s_name} (ID: {found_student})**\n"
-            response += f"- **Dept:** {s_dept} | **Risk:** {s_risk}\n"
-            response += f"- **Attendance:** {s_att:.1f}% | **Final Marks:** {s_final:.1f}\n\n"
-            
-            if s_risk == "High":
-              response += "⚠️ *Action:* Immediate counselor check-ins and peer tutoring required."
-            elif s_risk == "Moderate":
-              response += "⚠️ *Action:* Monitor upcoming assignments during office hours."
-            else:
-              response += "✅ *Action:* Performing well! Maintain current habits."
-          else:
-            response = "I'm Peter! Ask about a student name, ID, or type *" + '"recommendations"' + "."
-
-        st.session_state.messages.append({"role": "assistant", "content": response})
-        st.rerun()
-
-    st.markdown('</div>', unsafe_allow_html=True)
+    with st.chat_message("assistant"):
+      st.markdown(response)
+    st.session_state.messages.append({"role": "assistant", "content": response})
