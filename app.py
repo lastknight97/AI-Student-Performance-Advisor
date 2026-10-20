@@ -89,10 +89,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- ML Pipeline Workflow (Slide 6 Implementation) ---
+# --- ML Pipeline Workflow ---
 @st.cache_resource
 def run_ml_pipeline():
-  # 1. Dataset Collection[span_3](start_span)[span_3](end_span)
   excel_path = "data/Subject_Analytics_Dataset_200_Students.xlsx"
   
   if not os.path.exists(excel_path):
@@ -105,12 +104,10 @@ def run_ml_pipeline():
     st.error(f"⚠️ Error reading dataset: {e}")
     st.stop()
 
-  # 2. Data Cleaning & Validation[span_4](start_span)[span_4](end_span)
   df.columns = df.columns.str.strip()
   for col in df.select_dtypes(include=['object']).columns:
     df[col] = df[col].astype(str).str.strip()
 
-  # 3 & 4. Feature Engineering[span_5](start_span)[span_5](end_span)
   if "performance_trend" not in df.columns:
     df["performance_trend"] = np.where(df["Final_Marks"] >= df["Midterm_Marks"], 1, -1)
   else:
@@ -121,32 +118,26 @@ def run_ml_pipeline():
 
   feature_cols = ["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks", "performance_trend", "missed_assessments"]
   
-  # Binary Target: 0 = No Risk, 1 = Academic Attention Required[span_6](start_span)[span_6](end_span)
   composite_score = (df["Attendance"] * 0.25) + (df["Final_Marks"] * 0.35) + (df["Midterm_Marks"] * 0.25) + (df["Quiz_Score"] * 0.15)
   df["risk_target"] = np.where(composite_score < 58, 1, 0)
 
   X = df[feature_cols]
   y = df["risk_target"]
 
-  # 5. Train-Test Split (80/20)[span_7](start_span)[span_7](end_span)
   X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-  # 6. Baseline Model: Logistic Regression[span_8](start_span)[span_8](end_span)
   lr_baseline = LogisticRegression(random_state=42, max_iter=300)
   lr_baseline.fit(X_train, y_train)
   lr_pred = lr_baseline.predict(X_test)
   lr_report = classification_report(y_test, lr_pred, output_dict=True)
 
-  # 7. Main Model: Random Forest Classifier[span_9](start_span)[span_9](end_span)
   rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
   rf_model.fit(X_train, y_train)
   rf_pred = rf_model.predict(X_test)
   
-  # 8. Evaluation Metrics[span_10](start_span)[span_10](end_span)
   rf_report = classification_report(y_test, rf_pred, output_dict=True)
   conf_matrix = confusion_matrix(y_test, rf_pred)
 
-  # Model Risk Probability Score Assignment
   df["ML_Attention_Predicted"] = rf_model.predict(X)
   df["ML_Risk_Probability"] = rf_model.predict_proba(X)[:, 1]
 
@@ -195,7 +186,6 @@ if selected_section == "📊 Students Performance Desk":
   with left_col:
     st.markdown("### STUDENTS PERFORMANCE DESK")
     
-    # Student Metadata Badges
     p_col1, p_col2, p_col3 = st.columns([1, 2, 2])
     with p_col1:
       st.image("https://api.dicebear.com/7.x/avataaars/svg?seed=" + student_name, width=115)
@@ -214,7 +204,6 @@ if selected_section == "📊 Students Performance Desk":
 
     st.markdown("---")
     
-    # Trace Academy Tabbed Desk
     tab_assessment, tab_subjects, tab_recommendations = st.tabs(["📝 Assessment", "📚 Subjects", "💡 Recommendations"])
 
     with tab_assessment:
@@ -237,14 +226,14 @@ if selected_section == "📊 Students Performance Desk":
       st.plotly_chart(fig_scores, use_container_width=True)
 
     with tab_recommendations:
-      st.markdown("#### ML Recommendation Engine (Slide 7 & 8)")[span_11](start_span)[span_11](end_span)[span_12](start_span)[span_12](end_span)
+      st.markdown("#### ML Recommendation Engine")
       for idx, row in student_df.iterrows():
         prob = row["ML_Risk_Probability"]
         subj = row["Subject"]
         
         if prob >= 0.5:
-          st.error(f"⚠️ **{subj}** — ML Risk Probability: `{prob:.2f}` (Requires Academic Attention)[span_13](start_span)[span_13](end_span)\n\n"
-                   f"*System Recommendation:* Scores and attendance in {subj} are trailing behind. Review recent assessment topics and prioritize upcoming assessments[span_14](start_span)[span_14](end_span).")
+          st.error(f"⚠️ **{subj}** — ML Risk Probability: `{prob:.2f}` (Requires Academic Attention)\n\n"
+                   f"*System Recommendation:* Scores and attendance in {subj} are trailing behind. Review recent assessment topics and prioritize upcoming assessments.")
         else:
           st.success(f"✅ **{subj}** — ML Risk Probability: `{prob:.2f}` (No Immediate Risk)\n\n"
                      f"*System Recommendation:* Maintain current study strategy. Performance is stable.")
@@ -287,12 +276,12 @@ if selected_section == "📊 Students Performance Desk":
 # ==========================================
 elif selected_section == "📈 Model Verification & Analytics":
   st.title("📈 Machine Learning Workflow Verification")
-  st.markdown("Direct evaluation of models specified in Slide 2 & Slide 6[span_15](start_span)[span_15](end_span)[span_16](start_span)[span_16](end_span).")
+  st.markdown("Direct evaluation of models specified in Slide 2 & Slide 6.")
   st.markdown("---")
 
   c1, c2 = st.columns(2)
   with c1:
-    st.markdown("#### 🌲 Primary Model: Random Forest Classifier[span_17](start_span)[span_17](end_span)")
+    st.markdown("#### 🌲 Primary Model: Random Forest Classifier")
     rf_metrics_df = pd.DataFrame({
         "Class": ["No Risk (0)", "Attention (1)"],
         "Precision": [rf_report['0']['precision'], rf_report['1']['precision']],
@@ -302,7 +291,7 @@ elif selected_section == "📈 Model Verification & Analytics":
     st.dataframe(rf_metrics_df.style.format(precision=2), use_container_width=True)
 
   with c2:
-    st.markdown("#### 📉 Baseline Model: Logistic Regression[span_18](start_span)[span_18](end_span)")
+    st.markdown("#### 📉 Baseline Model: Logistic Regression")
     lr_metrics_df = pd.DataFrame({
         "Class": ["No Risk (0)", "Attention (1)"],
         "Precision": [lr_report['0']['precision'], lr_report['1']['precision']],
@@ -312,7 +301,7 @@ elif selected_section == "📈 Model Verification & Analytics":
     st.dataframe(lr_metrics_df.style.format(precision=2), use_container_width=True)
 
   st.markdown("---")
-  st.markdown("#### 🔍 Explainability & Feature Importance (Slide 11)[span_19](start_span)[span_19](end_span)")
+  st.markdown("#### 🔍 Explainability & Feature Importance (Slide 11)")
   feature_importances = pd.DataFrame({
       "Feature": feature_cols,
       "Importance": rf_model.feature_importances_
