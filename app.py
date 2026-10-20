@@ -16,7 +16,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# --- Custom CSS for Styling & Text Contrast ---
+# --- Custom CSS for Styling, Contrast & Floating Chat Widget ---
 st.markdown("""
     <style>
         .main { background-color: #f8f9fa; }
@@ -31,13 +31,28 @@ st.markdown("""
         .metric-card h2, .metric-card p, .metric-card b {
             color: #1f2937 !important;
         }
+        /* Floating Chat Widget Container Styling */
+        .floating-chat-container {
+            position: fixed;
+            bottom: 90px;
+            right: 30px;
+            width: 400px;
+            height: 520px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            z-index: 99999;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e5e7eb;
+        }
     </style>
 """, unsafe_allow_html=True)
 
 # --- Data Loading & Machine Learning Workflow (Slide 6) ---
 @st.cache_resource
 def load_and_evaluate_data():
-  # Step 1: Collect dataset from the data folder
   excel_path = "data/Subject_Analytics_Dataset_200_Students.xlsx"
   
   if not os.path.exists(excel_path):
@@ -50,7 +65,6 @@ def load_and_evaluate_data():
     st.error(f"⚠️ Error reading Excel file: {e}")
     st.stop()
 
-  # Step 2: Clean and validate the data
   df.columns = df.columns.str.strip()
   for col in df.select_dtypes(include=['object']).columns:
     df[col] = df[col].astype(str).str.strip()
@@ -66,7 +80,6 @@ def load_and_evaluate_data():
     st.error(f"❌ Missing columns in Excel file: {missing_cols}")
     st.stop()
 
-  # Step 3 & 4: Explore distributions and engineer meaningful features
   feature_cols = ["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks"]
   X = df[feature_cols]
 
@@ -82,21 +95,17 @@ def load_and_evaluate_data():
 
   y = composite_score.apply(get_target_label)
 
-  # Step 5: Split data into training and testing sets[span_1](start_span)[span_1](end_span)
   X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-  # Step 6: Train Logistic Regression baseline[span_2](start_span)[span_2](end_span)
   lr_baseline = LogisticRegression(random_state=42, max_iter=200)
   lr_baseline.fit(X_train, y_train)
   lr_pred = lr_baseline.predict(X_test)
   lr_report = classification_report(y_test, lr_pred, output_dict=True)
 
-  # Step 7: Train Random Forest classifier[span_3](start_span)[span_3](end_span)
   rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
   rf_model.fit(X_train, y_train)
   rf_pred = rf_model.predict(X_test)
   
-  # Step 8: Calculate precision, recall, F1-score, and confusion matrix[span_4](start_span)[span_4](end_span)
   rf_report = classification_report(y_test, rf_pred, output_dict=True)
   conf_matrix = confusion_matrix(y_test, rf_pred, labels=["High", "Moderate", "Low"])
 
@@ -113,7 +122,6 @@ def load_and_evaluate_data():
 
   return df, rf_model, rf_report, lr_report, conf_matrix
 
-# Load dataset and ML evaluation metrics
 df, rf_model, rf_report, lr_report, conf_matrix = load_and_evaluate_data()
 
 # --- Sidebar Navigation (Sections) ---
@@ -353,11 +361,8 @@ elif selected_section == "📈 Analytics":
   )
   st.plotly_chart(fig_comp, use_container_width=True)
 
-  # --- Step 8: Model Evaluation Metrics (Precision, Recall, F1-Score)[span_5](start_span)[span_5](end_span) ---
   st.markdown("---")
-  st.subheader("📐 Model Evaluation Metrics (Step 8 Verification)")
-  st.markdown("Comparing model performance on test data using **Precision, Recall, and F1-Score**[span_6](start_span)[span_6](end_span).")
-
+  st.subheader("📐 Model Evaluation Metrics")
   col_m1, col_m2 = st.columns(2)
   with col_m1:
     st.markdown("#### 🌲 Random Forest Classifier Metrics")
@@ -379,7 +384,6 @@ elif selected_section == "📈 Analytics":
     })
     st.dataframe(lr_metrics_df.style.format(precision=2), use_container_width=True)
 
-  # --- Confusion Matrix Display ---
   st.markdown("#### 🗂️ Random Forest Confusion Matrix")
   cm_df = pd.DataFrame(
       conf_matrix, 
@@ -388,11 +392,8 @@ elif selected_section == "📈 Analytics":
   )
   st.dataframe(cm_df, use_container_width=True)
 
-  # --- Feature Importance Visualization ---
   st.markdown("---")
   st.subheader("🔍 AI Model Insights: What the Model Weighs Most")
-  st.markdown("This chart shows which academic factors the Random Forest model relies on most heavily to determine student risk levels.")
-
   feature_importances = pd.DataFrame({
       "Academic_Factor": ["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks"],
       "Importance": rf_model.feature_importances_
@@ -418,4 +419,118 @@ elif selected_section == "📈 Analytics":
   )
   fig_importance.update_layout(xaxis_title="Impact Weight", yaxis_title="Academic Metric")
   st.plotly_chart(fig_importance, use_container_width=True)
+
+
+# ==========================================
+# FLOATING CHATBOT WIDGET (Bottom Right Corner)
+# ==========================================
+
+# Initialize chat open state
+if "chat_open" not in st.session_state:
+  st.session_state.chat_open = False
+
+# Initialize chat history
+if "messages" not in st.session_state:
+  st.session_state.messages = [
+      {"role": "assistant", "content": "👋 Hello educator! Ask me about any student record or type *'recommendations'* to fetch research-backed improvement steps for at-risk learners."}
+  ]
+
+# Custom CSS for placing the floating toggle button in the bottom right corner
+st.markdown("""
+    <style>
+        .floating-btn-wrapper {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            z-index: 999999;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+# Render the floating toggle button
+with st.container():
+  st.markdown('<div class="floating-btn-wrapper">', unsafe_allow_html=True)
+  if st.button("💬 AI Advisor Chat", key="chat_toggle_btn", type="primary"):
+    st.session_state.chat_open = not st.session_state.chat_open
+    st.rerun()
+  st.markdown('</div>', unsafe_allow_html=True)
+
+# Render the floating chat popup window if open
+if st.session_state.chat_open:
+  with st.container():
+    st.markdown('<div class="floating-chat-container">', unsafe_allow_html=True)
     
+    # Header & Close button
+    ch1, ch2 = st.columns([4, 1])
+    with ch1:
+      st.markdown("**💬 AI Performance Assistant**")
+    with ch2:
+      if st.button("✖", key="close_chat"):
+        st.session_state.chat_open = False
+        st.rerun()
+        
+    st.markdown("---")
+    
+    # Chat history display area
+    chat_container = st.container(height=340)
+    with chat_container:
+      for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+          st.markdown(message["content"])
+
+    # Chat input box at the bottom of the popup widget
+    if prompt := st.chat_input("Ask about student data or strategies...", key="floating_chat_input"):
+      st.session_state.messages.append({"role": "user", "content": prompt})
+      
+      # Contextual Query & Research-Backed Strategy Responder
+      query_lower = prompt.lower()
+      response = ""
+
+      # Querying general research-backed improvement recommendations
+      if "recommend" in query_lower or "strategy" in query_lower or "improve" in query_lower or "step" in query_lower:
+        response = "🌐 **Evidence-Based Pedagogical Strategies for At-Risk Learners:**\n\n"
+        response += "1. **Targeted Tutoring & Peer Dyads:** Pair students struggling in specific topics with high-performing peers using Class-Wide Peer Tutoring (CWPT).\n"
+        response += "2. **Differentiated & Mastery Learning:** Allow flexible pathways for assignment completion and adjust instructional pacing for key conceptual gaps.\n"
+        response += "3. **Metacognitive Goal Setting:** Have students complete weekly self-evaluation logs to track test preparation and assignment deadlines.\n"
+        response += "4. **Attendance Climate Checks:** For chronically absent students, initiate weekly check-ins or temperature checks with academic counselors."
+
+      # Querying high risk summary
+      elif "high" in query_lower and ("risk" in query_lower or "student" in query_lower or "status" in query_lower):
+        high_risk_students = df[df["Risk_Level"] == "High"][["Student_ID", "Student_Name", "Department", "Subject"]].drop_duplicates().head(5)
+        response = "🚨 **High Risk Students Summary:**\n\nHere are students currently flagged at **High** risk:\n"
+        for idx, row in high_risk_students.iterrows():
+          response += f"- **{row['Student_Name']}** (ID: {row['Student_ID']}, Dept: {row['Department']})\n"
+        response += "\n*Recommended Pedagogical Steps:* Assign targeted tutoring, establish attendance check-ins, and create individualized learning goals."
+
+      # Querying specific student lookup
+      else:
+        found_student = None
+        for _, row in df.drop_duplicates(subset=["Student_ID"]).iterrows():
+          if str(row["Student_ID"]) in query_lower or row["Student_Name"].lower() in query_lower:
+            found_student = row["Student_ID"]
+            break
+        
+        if found_student:
+          s_data = df[df["Student_ID"] == found_student]
+          s_name = s_data["Student_Name"].iloc[0]
+          s_dept = s_data["Department"].iloc[0]
+          s_risk = s_data["Risk_Level"].iloc[0]
+          s_att = s_data["Attendance"].mean()
+          s_final = s_data["Final_Marks"].mean()
+
+          response = f"👤 **Profile: {s_name} (ID: {found_student})**\n"
+          response += f"- **Department:** {s_dept}\n- **Overall Status:** {s_risk} Risk\n- **Avg Attendance:** {s_att:.1f}%\n- **Avg Final Marks:** {s_final:.1f}\n\n"
+          
+          if s_risk == "High":
+            response += "⚠️ **Tailored Intervention Plan:**\n- *Attendance Strategy:* Conduct counselor temperature checks for low attendance.\n- *Academic Strategy:* Assign peer-tutoring dyads and guided assignment practice."
+          elif s_risk == "Moderate":
+            response += "⚠️ **Tailored Intervention Plan:**\n- Provide worked examples for midterm topics and encourage weekly goal-setting."
+          else:
+            response += "✅ **Tailored Intervention Plan:**\n- Performing well! Maintain current study habits and offer optional enrichment tasks."
+        else:
+          response = "I can look up student records and provide research-backed intervention strategies! Try typing a student's name, ID, or ask *" + '"What are recommended steps to improve high risk students?"*'
+
+      st.session_state.messages.append({"role": "assistant", "content": response})
+      st.rerun()
+
+    st.markdown('</div>', unsafe_allow_html=True)
