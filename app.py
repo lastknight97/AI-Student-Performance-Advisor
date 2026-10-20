@@ -17,27 +17,23 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- Creative Ultra-Modern SaaS CSS ---
+# --- Modern Ultra-Clean SaaS Theme CSS ---
 st.markdown("""
     <style>
-        /* Global Background & Typography */
         .stApp {
             background: #090d16 !important;
             color: #f1f5f9 !important;
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        /* Top Banner */
+        /* Top Hero Header */
         .hero-banner {
-            background: linear-gradient(135deg, rgba(30,41,59,0.8) 0%, rgba(15,23,42,0.9) 100%);
+            background: linear-gradient(135deg, rgba(30,41,59,0.8) 0%, rgba(15,23,42,0.95) 100%);
             border: 1px solid rgba(255,255,255,0.08);
             backdrop-filter: blur(12px);
             border-radius: 16px;
             padding: 20px 24px;
             margin-bottom: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
         }
         .hero-title {
             font-size: 22px;
@@ -61,11 +57,6 @@ st.markdown("""
             padding: 18px 20px;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(8px);
-            transition: all 0.3s ease;
-        }
-        .glass-card:hover {
-            border-color: rgba(99, 102, 241, 0.4);
-            transform: translateY(-2px);
         }
         .card-label {
             font-size: 11px;
@@ -81,7 +72,7 @@ st.markdown("""
             margin-top: 4px;
         }
 
-        /* Unified Container Box */
+        /* Container Boxes */
         .container-box {
             background: rgba(15, 23, 42, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.06);
@@ -90,7 +81,7 @@ st.markdown("""
             margin-bottom: 20px;
         }
         .section-header {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
             color: #e2e8f0;
             text-transform: uppercase;
@@ -99,6 +90,68 @@ st.markdown("""
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+
+        /* Actionable Advisory Step Cards */
+        .action-card {
+            background: rgba(244, 63, 94, 0.08);
+            border: 1px solid rgba(244, 63, 94, 0.25);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 14px;
+        }
+        .action-card-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fb7185;
+            margin-bottom: 8px;
+        }
+        .action-step {
+            font-size: 12px;
+            color: #cbd5e1;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        /* Subject Cards */
+        .subject-card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+        }
+        .subject-card-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #f8fafc;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .subject-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            text-align: center;
+        }
+        .sub-box {
+            background: rgba(15, 23, 42, 0.7);
+            border-radius: 8px;
+            padding: 6px;
+        }
+        .sub-lbl {
+            font-size: 9px;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        .sub-val {
+            font-size: 13px;
+            color: #f1f5f9;
+            font-weight: 700;
         }
 
         /* Status Pills */
@@ -120,12 +173,6 @@ st.markdown("""
             font-size: 11px;
             font-weight: 700;
         }
-
-        /* Clean Table Overrides */
-        .stDataFrame {
-            border-radius: 12px !important;
-            overflow: hidden !important;
-        }
     </style>
 """, unsafe_allow_html=True)
 
@@ -135,7 +182,7 @@ def run_ml_pipeline():
     excel_path = "data/Subject_Analytics_Dataset_200_Students.xlsx"
     
     if not os.path.exists(excel_path):
-        st.error(f"⚠️ Dataset not found at '{excel_path}'. Please place the file in 'data/'.")
+        st.error(f"⚠️ Dataset not found at '{excel_path}'. Please place the file inside the 'data/' directory.")
         st.stop()
 
     try:
@@ -199,7 +246,7 @@ st.markdown("""
     <div class="hero-banner">
         <div>
             <div class="hero-title">🎓 AI STUDENT PERFORMANCE DESK</div>
-            <div class="hero-subtitle">Machine Learning Academic Risk Prediction & Performance Analytics</div>
+            <div class="hero-subtitle">Machine Learning Academic Risk Prediction & Prescriptive Recovery Guidance</div>
         </div>
     </div>
 """, unsafe_allow_html=True)
@@ -224,7 +271,7 @@ st.markdown("<hr style='border-color: rgba(255,255,255,0.08); margin: 16px 0 24p
 
 
 # ==========================================
-# SECTION 1: CREATIVE STUDENT OVERVIEW
+# SECTION 1: ACTIONABLE STUDENT OVERVIEW
 # ==========================================
 if selected_section == "📋 Student Overview":
     student_df = df[df["Student_ID"] == selected_student_id]
@@ -245,7 +292,7 @@ if selected_section == "📋 Student Overview":
     with k1:
         st.markdown(f"""
             <div class="glass-card" style="border-left: 4px solid #38bdf8;">
-                <div class="card-label">Student ID</div>
+                <div class="card-label">Student Profile</div>
                 <div class="card-value">{selected_student_id}</div>
                 <div style="font-size:12px; color:#94a3b8; margin-top:2px;">{student_name}</div>
             </div>
@@ -270,111 +317,136 @@ if selected_section == "📋 Student Overview":
         status_html = "<span class='status-pill-red'>⚠️ ATTENTION REQUIRED</span>" if ml_requires_attention else "<span class='status-pill-green'>✅ STABLE STANDING</span>"
         st.markdown(f"""
             <div class="glass-card" style="border-left: 4px solid {'#f43f5e' if ml_requires_attention else '#10b981'};">
-                <div class="card-label">ML Risk Status</div>
+                <div class="card-label">ML Risk Assessment</div>
                 <div style="margin-top:8px;">{status_html}</div>
-                <div style="font-size:12px; color:#94a3b8; margin-top:8px;">Risk Probability: <b>{ml_risk_prob:.2f}</b></div>
+                <div style="font-size:12px; color:#94a3b8; margin-top:8px;">Risk Index: <b>{ml_risk_prob:.2f}</b></div>
             </div>
         """, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Conditional AI Advisory Alert (Only shows if flagged)
+    # --- PRESCRIPTIVE RECOVERY ADVISORY (ACTIONABLE STEPS) ---
     flagged_subjects = student_df[student_df["ML_Risk_Probability"] >= 0.5]
+    
     if len(flagged_subjects) > 0:
         st.markdown("<div class='container-box' style='border-left: 4px solid #f43f5e;'>", unsafe_allow_html=True)
-        st.markdown("<div class='section-header' style='color:#fb7185;'>⚠️ AI Academic Intervention Advisory</div>", unsafe_allow_html=True)
-        for idx, row in flagged_subjects.iterrows():
-            st.error(f"Module **{row['Subject']}** flagged with risk probability `{row['ML_Risk_Probability']:.2f}`. Low midterm or quiz trends detected.")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    # Main Grid: Radar Chart + Progression Journey vs Matrix
-    row1_left, row1_right = st.columns([1.3, 1.7])
-
-    with row1_left:
-        st.markdown("<div class='container-box'>", unsafe_allow_html=True)
-        st.markdown("<div class='section-header'>🕸️ Subject Competency Radar</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header' style='color:#fb7185;'>🛠️ Prescriptive AI Academic Recovery Roadmap</div>", unsafe_allow_html=True)
         
-        # Plotly Radar / Spider Chart
+        for idx, row in flagged_subjects.iterrows():
+            subj = row["Subject"]
+            prob = row["ML_Risk_Probability"]
+            quiz = row["Quiz_Score"]
+            midterm = row["Midterm_Marks"]
+            attendance = row["Attendance"]
+            
+            # Dynamic Step Generation based on specific weaknesses
+            steps = []
+            if quiz < 60:
+                steps.append(f"**Step 1: Quiz Remediation** — Score is `{quiz}/100`. Schedule weekly self-assessments on fundamental concepts before the next evaluation.")
+            if midterm < 60:
+                steps.append(f"**Step 2: Midterm Concept Review** — Score is `{midterm}/100`. Request 1-on-1 faculty office hours for module re-examination.")
+            if attendance < 75:
+                steps.append(f"**Step 3: Attendance Recovery** — Current attendance is `{attendance:.1f}%`. Attendance is below the 75% baseline; mandatory tutorial sessions required.")
+            steps.append(f"**Step 4: Practice Problem Sets** — Complete 3 targeted practice worksheets prior to final examinations to recover weighting.")
+
+            steps_html = "".join([f"<div class='action-step'>📌 {step}</div>" for step in steps])
+
+            st.markdown(f"""
+                <div class='action-card'>
+                    <div class='action-card-title'>⚠️ {subj} (Risk Index: {prob:.2f}) — Prescriptive Recovery Plan</div>
+                    {steps_html}
+                </div>
+            """, unsafe_allow_html=True)
+            
+        st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        st.markdown("""
+            <div class='container-box' style='border-left: 4px solid #10b981;'>
+                <div class='section-header' style='color:#34d399;'>✅ Academic Status: Optimal</div>
+                <div style='font-size:12px; color:#cbd5e1;'>All enrolled modules are performing above risk thresholds. Maintain current study routine and assignment submission schedules.</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # --- 3-COLUMN ANALYTICAL OVERVIEW GRID ---
+    col_a, col_b, col_c = st.columns([1.1, 1.2, 1.7])
+
+    with col_a:
+        st.markdown("<div class='container-box'>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>🕸️ Competency Balance</div>", unsafe_allow_html=True)
+        
         categories = student_df["Subject"].tolist()
         fig_radar = go.Figure()
-
         fig_radar.add_trace(go.Scatterpolar(
-            r=student_df["Final_Marks"].tolist(),
-            theta=categories,
-            fill='toself',
-            name='Final Marks',
-            line_color='#38bdf8',
-            fillcolor='rgba(56, 189, 248, 0.25)'
+            r=student_df["Final_Marks"].tolist(), theta=categories, fill='toself',
+            name='Final Marks', line_color='#38bdf8', fillcolor='rgba(56, 189, 248, 0.25)'
         ))
         fig_radar.add_trace(go.Scatterpolar(
-            r=student_df["Midterm_Marks"].tolist(),
-            theta=categories,
-            fill='toself',
-            name='Midterm Marks',
-            line_color='#c084fc',
-            fillcolor='rgba(192, 132, 252, 0.15)'
+            r=student_df["Midterm_Marks"].tolist(), theta=categories, fill='toself',
+            name='Midterm Marks', line_color='#c084fc', fillcolor='rgba(192, 132, 252, 0.15)'
         ))
-
         fig_radar.update_layout(
             polar=dict(
                 radialaxis=dict(visible=True, range=[0, 100], gridcolor='#1e293b'),
-                angularaxis=dict(gridcolor='#1e293b', tickfont=dict(color='#f1f5f9', size=11))
+                angularaxis=dict(gridcolor='#1e293b', tickfont=dict(color='#f1f5f9', size=10))
             ),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            margin=dict(l=30, r=30, t=20, b=20),
-            height=320,
-            showlegend=True,
-            legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5, font=dict(color='#f1f5f9'))
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            margin=dict(l=20, r=20, t=10, b=10), height=280, showlegend=False
         )
         st.plotly_chart(fig_radar, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    with row1_right:
+    with col_b:
         st.markdown("<div class='container-box'>", unsafe_allow_html=True)
-        st.markdown("<div class='section-header'>📈 Assessment Score Progression Journey</div>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>📊 Benchmark Gap Analysis</div>", unsafe_allow_html=True)
         
-        # Transform data for progression line plot
-        prog_df = student_df.melt(
-            id_vars=["Subject"], 
-            value_vars=["Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks"],
-            var_name="Evaluation Stage", 
-            value_name="Score"
+        # Gap vs Target (Benchmark = 75)
+        gap_df = student_df[["Subject", "Final_Marks"]].copy()
+        gap_df["Target Benchmark"] = 75
+        
+        fig_gap = px.bar(
+            gap_df, x="Subject", y=["Final_Marks", "Target Benchmark"],
+            barmode="group", color_discrete_sequence=["#38bdf8", "#475569"]
         )
-        prog_df["Evaluation Stage"] = prog_df["Evaluation Stage"].str.replace("_", " ").str.title()
-
-        fig_prog = px.line(
-            prog_df, 
-            x="Evaluation Stage", 
-            y="Score", 
-            color="Subject", 
-            markers=True,
-            color_discrete_sequence=["#38bdf8", "#818cf8", "#c084fc", "#f43f5e", "#10b981"]
-        )
-        fig_prog.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="#f1f5f9"),
-            height=320,
-            margin=dict(l=10, r=10, t=10, b=10),
-            xaxis=dict(gridcolor='#1e293b'),
-            yaxis=dict(gridcolor='#1e293b', range=[0, 105]),
+        fig_gap.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#f1f5f9"), height=280, margin=dict(l=10, r=10, t=10, b=10),
+            yaxis=dict(gridcolor='#1e293b', range=[0, 100]),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
-        st.plotly_chart(fig_prog, use_container_width=True)
+        st.plotly_chart(fig_gap, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Unified Subject Analytics Matrix
-    st.markdown("<div class='container-box'>", unsafe_allow_html=True)
-    st.markdown("<div class='section-header'>📚 Complete Subject Performance Matrix</div>", unsafe_allow_html=True)
-    
-    matrix_df = student_df[["Subject", "Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks", "Grade", "ML_Risk_Probability"]].copy()
-    matrix_df["ML Risk Status"] = np.where(matrix_df["ML_Risk_Probability"] >= 0.5, "⚠️ Flagged", "✅ Stable")
-    matrix_df = matrix_df[["Subject", "Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks", "Grade", "ML Risk Status"]]
-    matrix_df.columns = ["Subject Module", "Attendance %", "Quiz Score", "Assignment", "Midterm", "Final Marks", "Grade", "ML Status"]
-    
-    st.dataframe(matrix_df, use_container_width=True, hide_index=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    with col_c:
+        st.markdown("<div class='container-box'>", unsafe_allow_html=True)
+        st.markdown("<div class='section-header'>📖 Enrolled Module Breakdown</div>", unsafe_allow_html=True)
+        
+        for idx, row in student_df.iterrows():
+            subj_name = row["Subject"]
+            quiz = row["Quiz_Score"]
+            assignment = row["Assignment_Score"]
+            midterm = row["Midterm_Marks"]
+            final = row["Final_Marks"]
+            grade = row["Grade"]
+            prob = row["ML_Risk_Probability"]
+            badge = "⚠️ Flagged" if prob >= 0.5 else "✅ Stable"
+            color = "#fb7185" if prob >= 0.5 else "#34d399"
+            
+            st.markdown(f"""
+                <div class='subject-card'>
+                    <div class='subject-card-title'>
+                        <span>{subj_name} (Grade: {grade})</span>
+                        <span style='font-size:11px; color:{color}; font-weight:700;'>{badge}</span>
+                    </div>
+                    <div class='subject-grid'>
+                        <div class='sub-box'><div class='sub-lbl'>Quiz</div><div class='sub-val'>{quiz}</div></div>
+                        <div class='sub-box'><div class='sub-lbl'>Assign</div><div class='sub-val'>{assignment}</div></div>
+                        <div class='sub-box'><div class='sub-lbl'>Midterm</div><div class='sub-val'>{midterm}</div></div>
+                        <div class='sub-box'><div class='sub-lbl'>Final</div><div class='sub-val'>{final}</div></div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ==========================================
