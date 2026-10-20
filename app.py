@@ -9,22 +9,28 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
 
-# --- Page Configuration ---
+# --- Page Configuration (Sidebar collapsed by default) ---
 st.set_page_config(
     page_title="AI Student Performance Dashboard",
     page_icon="🎓",
     layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
-# --- Clean Light-Theme UI Custom CSS (Inspired by reference layout style, zero copied text/names) ---
+# --- Clean Light-Theme UI Custom CSS with High-Contrast Text ---
 st.markdown("""
     <style>
-        /* Light Global Background */
+        /* Light Global Background & High-Contrast Text */
         .stApp {
-            background-color: #f4f6fb;
-            color: #1e293b;
+            background-color: #f4f6fb !important;
+            color: #0f172a !important;
         }
         
+        /* Force Markdown and Text Visibility */
+        h1, h2, h3, h4, h5, h6, p, span, label {
+            color: #0f172a !important;
+        }
+
         /* Top Greeting Banner */
         .welcome-banner {
             background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
@@ -33,20 +39,17 @@ st.markdown("""
             border: 1px solid #e2e8f0;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
             margin-bottom: 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
         .welcome-banner h2 {
             margin: 0;
             font-size: 24px;
             font-weight: 800;
-            color: #0f172a;
+            color: #0f172a !important;
         }
         .welcome-banner p {
             margin: 4px 0 0 0;
             font-size: 13px;
-            color: #64748b;
+            color: #475569 !important;
         }
 
         /* Modern Card Container */
@@ -61,14 +64,14 @@ st.markdown("""
         .dash-card label {
             font-size: 11px;
             text-transform: uppercase;
-            color: #64748b;
+            color: #475569 !important;
             font-weight: 700;
             display: block;
         }
         .dash-card h3 {
             margin: 6px 0 0 0;
             font-size: 22px;
-            color: #0f172a;
+            color: #0f172a !important;
             font-weight: 800;
         }
 
@@ -82,15 +85,21 @@ st.markdown("""
         }
         .profile-badge label {
             font-size: 10px;
-            color: #64748b;
+            color: #475569 !important;
             text-transform: uppercase;
             font-weight: 700;
             display: block;
         }
         .profile-badge span {
             font-size: 14px;
-            color: #0f172a;
+            color: #0f172a !important;
             font-weight: 700;
+        }
+
+        /* Streamlit Widgets Text Fix */
+        .stSelectbox label, .stRadio label {
+            color: #0f172a !important;
+            font-weight: 700 !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -168,10 +177,8 @@ df, rf_model, rf_report, lr_report, conf_matrix, feature_cols = run_ml_pipeline(
 # --- Top Header Banner ---
 st.markdown("""
     <div class="welcome-banner">
-        <div>
-            <h2>Welcome back, Advisor!</h2>
-            <p>Here is an overview of student performance metrics and machine learning analytics.</p>
-        </div>
+        <h2>Welcome back, Advisor!</h2>
+        <p>Here is an overview of student performance metrics and machine learning analytics.</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -199,7 +206,7 @@ st.markdown("---")
 if selected_section == "📈 Analytics & ML Verification":
     st.markdown("### 📊 Performance Analytics & Machine Learning Verification")
     
-    # Top 3 Metric Cards row (matching reference layout style)
+    # Top 3 Metric Cards row
     c1, c2, c3 = st.columns(3)
     with c1:
         st.markdown(f"<div class='dash-card'><label>Total Students</label><h3>{df['Student_ID'].nunique()}</h3></div>", unsafe_allow_html=True)
@@ -220,7 +227,7 @@ if selected_section == "📈 Analytics & ML Verification":
             dept_counts, x="Department", y="Student_ID", color="Department",
             color_discrete_sequence=["#4f46e5", "#6366f1", "#818cf8", "#a5b4fc"]
         )
-        fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False, height=280, margin=dict(t=10, b=10))
+        fig1.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False, height=280, margin=dict(t=10, b=10), font=dict(color="#0f172a"))
         st.plotly_chart(fig1, use_container_width=True)
 
     with g2:
@@ -229,7 +236,7 @@ if selected_section == "📈 Analytics & ML Verification":
         att_df = pd.Series(att_cats).value_counts().reset_index()
         att_df.columns = ["Status", "Count"]
         fig2 = px.pie(att_df, values="Count", names="Status", hole=0.6, color_discrete_sequence=["#10b981", "#ef4444"])
-        fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=280, margin=dict(t=10, b=10))
+        fig2.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=280, margin=dict(t=10, b=10), font=dict(color="#0f172a"))
         st.plotly_chart(fig2, use_container_width=True)
 
     with g3:
@@ -243,7 +250,7 @@ if selected_section == "📈 Analytics & ML Verification":
             grade_df, y="Grade", x="Final_Marks", orientation="h", color="Grade",
             color_discrete_sequence=px.colors.sequential.Purples_r
         )
-        fig3.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False, height=280, margin=dict(t=10, b=10))
+        fig3.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False, height=280, margin=dict(t=10, b=10), font=dict(color="#0f172a"))
         st.plotly_chart(fig3, use_container_width=True)
 
     st.markdown("---")
@@ -287,7 +294,7 @@ if selected_section == "📈 Analytics & ML Verification":
         color="Importance Score",
         color_continuous_scale="Purples"
     )
-    fig_importance.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=350, margin=dict(t=10, b=10))
+    fig_importance.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=350, margin=dict(t=10, b=10), font=dict(color="#0f172a"))
     st.plotly_chart(fig_importance, use_container_width=True)
 
 
@@ -325,14 +332,14 @@ elif selected_section == "📊 Student Performance Desk":
             barmode="group", orientation="h",
             color_discrete_sequence=["#c7d2fe", "#a5b4fc", "#818cf8", "#4338ca"]
         )
-        fig_bar.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", margin=dict(l=0, r=0, t=10, b=0))
+        fig_bar.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", margin=dict(l=0, r=0, t=10, b=0), font=dict(color="#0f172a"))
         st.plotly_chart(fig_bar, use_container_width=True)
 
     with col_mid:
         st.markdown("<div class='dash-card' style='text-align: center;'>", unsafe_allow_html=True)
         st.image(f"https://api.dicebear.com/7.x/avataaars/svg?seed={student_name}", width=110)
         st.markdown(f"<h3 style='margin: 8px 0 0 0; color: #0f172a;'>{student_name}</h3>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color: #64748b; font-size: 12px;'>ID: {selected_student_id} | {student_department}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color: #475569; font-size: 12px;'>ID: {selected_student_id} | {student_department}</p>", unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
         b1, b2 = st.columns(2)
@@ -375,7 +382,7 @@ elif selected_section == "🏠 Institutional Overview":
         st.markdown("#### Average Marks by Department")
         dept_avg = df.groupby("Department")["Final_Marks"].mean().reset_index()
         fig_dept = px.bar(dept_avg, x="Department", y="Final_Marks", color="Department")
-        fig_dept.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False)
+        fig_dept.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", showlegend=False, font=dict(color="#0f172a"))
         st.plotly_chart(fig_dept, use_container_width=True)
 
     with c_right:
@@ -383,6 +390,6 @@ elif selected_section == "🏠 Institutional Overview":
         risk_counts = df["ML_Attention_Predicted"].map({1: "Requires Attention", 0: "Stable"}).value_counts().reset_index()
         risk_counts.columns = ["Status", "Count"]
         fig_donut = px.pie(risk_counts, values="Count", names="Status", hole=0.5, color_discrete_sequence=["#10b981", "#ef4444"])
-        fig_donut.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        fig_donut.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#0f172a"))
         st.plotly_chart(fig_donut, use_container_width=True)
         
