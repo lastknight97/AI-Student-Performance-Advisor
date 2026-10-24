@@ -7,17 +7,17 @@ import streamlit as st
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import classification_report
 
 # --- PAGE CONFIGURATION ---
 st.set_page_config(
-    page_title="Student Academic Learning & Growth Dashboard",
+    page_title="Student Learning Support & Performance Dashboard",
     page_icon="🎓",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# --- HIGH-CONTRAST LIGHT ACADEMIC THEME (BLACK TEXT) ---
+# --- HIGH-CONTRAST LIGHT ACADEMIC THEME (SOLID BLACK FONT COLOR) ---
 st.markdown("""
     <style>
         .stApp {
@@ -107,7 +107,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- DATA INGESTION & PRIMARY KEY CONSOLIDATION ---
+# --- DATA PROCESSING & PRIMARY KEY CONSOLIDATION ---
 @st.cache_resource
 def load_and_prepare_academic_data():
     excel_path = "data/Subject_Analytics_Dataset_200_Students.xlsx"
@@ -134,7 +134,7 @@ def load_and_prepare_academic_data():
     for col in raw_df.select_dtypes(include=['object']).columns:
         raw_df[col] = raw_df[col].astype(str).str.strip()
 
-    # Treat Student_ID as Primary Key by aggregating subject records per student unique ID
+    # Treat Student_ID as Primary Key by aggregating subject records per unique student ID
     agg_dict = {
         "Student_Name": "first",
         "Semester": "first",
@@ -187,7 +187,7 @@ def load_and_prepare_academic_data():
 
 df, rf_model, rf_report, feature_cols = load_and_prepare_academic_data()
 
-# --- SIDEBAR FILTERS ---
+# --- SIDEBAR NAVIGATION ---
 with st.sidebar:
     st.markdown("## 📚 Academic Navigation")
     st.markdown("Select options to view student learning results.")
@@ -211,7 +211,7 @@ if selected_gender != "All":
 
 
 # ==============================================================================
-# VIEW 1: STUDENT OVERVIEW DASHBOARD
+# VIEW 1: 📊 STUDENT OVERVIEW DASHBOARD
 # ==============================================================================
 if selected_section == "📊 Student Overview Dashboard":
     st.markdown("### 📊 Student Learning Overview Dashboard")
@@ -300,7 +300,7 @@ if selected_section == "📊 Student Overview Dashboard":
 
 
 # ==============================================================================
-# VIEW 2: STUDENT PROFILE STUDY
+# VIEW 2: 👤 STUDENT PROFILE STUDY
 # ==============================================================================
 elif selected_section == "👤 Student Profile Study":
     st.markdown("### 👤 Student Profile & Study Guidance")
@@ -393,7 +393,7 @@ elif selected_section == "👤 Student Profile Study":
 
     with col_right:
         st.markdown("<div class='student-card'>", unsafe_allow_html=True)
-        st.markdown("<h4 style='font-size: 15px; font-weight: 800; color: #000000;'>🕸️ Performance Metrics Bar Overview</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='font-size: 15px; font-weight: 800; color: #000000;'>📊 Performance Metrics Bar Overview</h4>", unsafe_allow_html=True)
         
         metrics_bar_df = pd.DataFrame({
             "Metric": ["Attendance", "Quiz Score", "Assignment", "Midterm Mark", "Final Mark"],
@@ -428,7 +428,7 @@ elif selected_section == "👤 Student Profile Study":
 
 
 # ==============================================================================
-# VIEW 3: CLASS LEARNING PROGRESS
+# VIEW 3: 🏫 CLASS LEARNING PROGRESS
 # ==============================================================================
 elif selected_section == "🏫 Class Learning Progress":
     st.markdown("### 🏫 Class Learning Progress & Score Trends")
@@ -476,7 +476,7 @@ elif selected_section == "🏫 Class Learning Progress":
 
 
 # ==============================================================================
-# VIEW 4: AI MODEL VERIFICATION
+# VIEW 4: 🤖 AI MODEL VERIFICATION
 # ==============================================================================
 elif selected_section == "🤖 AI Model Verification":
     st.markdown("### 🤖 Academic Support Model Verification")
