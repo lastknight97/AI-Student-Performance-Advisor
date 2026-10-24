@@ -16,16 +16,11 @@ st.set_page_config(
 # --- EXACT POWER BI THEME & STYLING CSS ---
 st.markdown("""
     <style>
-        /* Main background */
         .stApp {
             background-color: #f0f2f6 !important;
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
         }
-
-        /* Hide default header elements */
         header {visibility: hidden;}
-        
-        /* Custom Left Sidebar Panel (Matches the Purple Panel in the screenshot) */
         section[data-testid="stSidebar"] {
             background-color: #4c51bf !important;
             color: white !important;
@@ -36,8 +31,6 @@ st.markdown("""
         section[data-testid="stSidebar"] p {
             color: white !important;
         }
-
-        /* Card Containers */
         .dashboard-card {
             background-color: #ffffff;
             border: 1px solid #e2e8f0;
@@ -46,8 +39,6 @@ st.markdown("""
             box-shadow: 0 1px 3px rgba(0,0,0,0.05);
             margin-bottom: 16px;
         }
-
-        /* Top KPI Cards */
         .kpi-card {
             background-color: #ffffff;
             border-top: 4px solid #4c51bf;
@@ -71,8 +62,6 @@ st.markdown("""
             color: #1a202c;
             margin-top: 2px;
         }
-
-        /* Rank Cards */
         .rank-card {
             background-color: #ffffff;
             border: 1px solid #e2e8f0;
@@ -103,7 +92,6 @@ def load_dashboard_data():
         df = pd.read_excel(excel_path)
         df.columns = df.columns.str.strip()
     else:
-        # Fallback synthetic dataset matching the schema if file is missing
         np.random.seed(42)
         n = 200
         df = pd.DataFrame({
@@ -124,12 +112,11 @@ def load_dashboard_data():
 
 df = load_dashboard_data()
 
-# --- SIDEBAR (Purple Control Panel matching screenshot) ---
+# --- SIDEBAR (Purple Control Panel) ---
 with st.sidebar:
     st.markdown("## Students Performance Dashboard")
     st.markdown("---")
     
-    # Date Filter Mockup
     st.markdown("##### Date Range")
     date_col1, date_col2 = st.columns(2)
     with date_col1:
@@ -138,18 +125,11 @@ with st.sidebar:
         end_date = st.date_input("End", value=pd.to_datetime("2025-07-15"))
         
     st.markdown("---")
-    
-    # RecordID Filter Dropdown
     record_id = st.selectbox("RecordID", options=["All"] + sorted(df["Student_ID"].unique().tolist()))
-    
     st.markdown("---")
-    
-    # Gender Radio / Filter
     gender_filter = st.radio("Gender", options=["All", "Female", "Male"], horizontal=False)
     
     st.markdown("<br><br>", unsafe_allow_html=True)
-    
-    # Bottom Sidebar Action Icons (Reset / Info)
     sb_col1, sb_col2 = st.columns(2)
     with sb_col1:
         if st.button("🔄", help="Reset Filters"):
@@ -157,7 +137,7 @@ with st.sidebar:
     with sb_col2:
         st.button("ℹ️", help="Dashboard Information")
 
-# --- FILTER DATAFRAME BASED ON SIDEBAR INPUTS ---
+# --- FILTER DATAFRAME ---
 filtered_df = df.copy()
 if record_id != "All":
     filtered_df = filtered_df[filtered_df["Student_ID"] == record_id]
@@ -166,18 +146,16 @@ if gender_filter != "All":
 
 # --- MAIN DASHBOARD AREA ---
 
-# Top Navigation Tabs & Summary KPI Row
-nav_tab1, nav_tab2, nav_tab3 = st.columns([3, 3, 3])
-with st.markdown("""
+# Top Navigation Header Row
+st.markdown("""
     <div style="display: flex; justify-content: flex-end; gap: 20px; font-weight: 700; font-size: 13px; color: #4a5568; margin-bottom: 12px; border-bottom: 2px solid #cbd5e0; padding-bottom: 8px;">
         <span style="color: #2b6cb0; border-bottom: 2px solid #2b6cb0; padding-bottom: 6px;">OVERVIEW</span>
         <span>STUDENTS & TEACHERS</span>
         <span>ASSESSMENTS</span>
     </div>
-""", unsafe_allow_html=True):
-    pass
+""", unsafe_allow_html=True)
 
-# 4 Top Summary KPI Cards matching the screenshot
+# 4 Top Summary KPI Cards
 kpi1, kpi2, k3, k4 = st.columns(4)
 
 with kpi1:
@@ -234,7 +212,6 @@ with row1_col1:
     st.markdown("<div class='dashboard-card'>", unsafe_allow_html=True)
     st.markdown("<p style='font-size: 12px; color: #718096; font-weight: 700; margin-bottom: 0;'>Pass % by Year Level</p>", unsafe_allow_html=True)
     
-    # Donut chart for Pass % by Year Level
     year_pass = filtered_df.groupby("Year_Level")["Final_Marks"].apply(lambda x: (x >= 50).mean() * 100).reset_index(name="Pass_Rate")
     fig_donut = px.pie(
         year_pass, names="Year_Level", values="Pass_Rate", hole=0.65,
@@ -249,7 +226,6 @@ with row1_col1:
     st.plotly_chart(fig_donut, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-# Top 3 Performing Students Cards matching screenshot layout
 top_students = filtered_df.sort_values(by="Final_Marks", ascending=False).drop_duplicates(subset=["Student_ID"]).head(3)
 dummy_students = [
     {"name": "Luis Meyer", "id": "STU007", "age": 15, "nat": "German", "tot": 87.15, "rank": "RANK 1"},
@@ -298,7 +274,7 @@ with row2_col1:
     dept_score = filtered_df.groupby("Department")["Final_Marks"].mean().reset_index()
     fig_dept = px.bar(
         dept_score, x="Department", y="Final_Marks",
-        color_discrete_sequence=["#4c5ilbf"]
+        color_discrete_sequence=["#4c51bf"]
     )
     fig_dept.update_traces(marker_color="#4c51bf")
     fig_dept.update_layout(
@@ -331,7 +307,6 @@ with row2_col3:
     st.markdown("<div class='dashboard-card'>", unsafe_allow_html=True)
     st.markdown("<p style='font-size: 12px; color: #718096; font-weight: 700; margin-bottom: 4px;'>Pass & Fail Rate Trend</p>", unsafe_allow_html=True)
     
-    # Trend mock data matching Power BI dual bar/line trend
     years = ["2022", "2023", "2024", "2025"]
     pass_rates = [69.23, 75.83, 80.00, 80.00]
     fail_rates = [30.77, 24.17, 20.00, 20.00]
