@@ -1,531 +1,1420 @@
 import os
+import warnings
+
 import numpy as np
 import pandas as pd
+import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
-import streamlit as st
-from sklearn.linear_model import LogisticRegression
+
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
-# --- PAGE CONFIGURATION ---
+warnings.filterwarnings("ignore")
+
+
+# ============================================================
+# PAGE CONFIGURATION
+# ============================================================
+
 st.set_page_config(
     page_title="Student Learning Support & Performance Dashboard",
     page_icon="🎓",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
-# --- HIGH-CONTRAST LIGHT ACADEMIC THEME (SOLID BLACK FONT COLOR) ---
-st.markdown("""
+
+# ============================================================
+# ACADEMIC THEME
+# ============================================================
+
+st.markdown(
+    """
     <style>
+        * {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        html, body, [class*="css"] {
+            color: #000000 !important;
+        }
+
         .stApp {
-            background-color: #f8fafc !important;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            color: #000000 !important;
+            background-color: #f8fafc;
         }
-        p, span, label, h1, h2, h3, h4, h5, h6, div {
-            color: #000000 !important;
-        }
+
         section[data-testid="stSidebar"] {
-            background-color: #ffffff !important;
-            border-right: 2px solid #cbd5e1;
-            padding-top: 16px;
-        }
-        .student-card {
             background-color: #ffffff;
-            border: 1.5px solid #cbd5e1;
-            border-radius: 12px;
-            padding: 18px 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
+            border-right: 1px solid #cbd5e1;
         }
-        .kpi-card {
-            background: #ffffff;
-            border: 1.5px solid #cbd5e1;
-            border-left: 5px solid #2563eb;
-            border-radius: 10px;
-            padding: 16px 18px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+
+        section[data-testid="stSidebar"] * {
+            color: #000000 !important;
         }
-        .kpi-title {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #334155 !important;
-            font-weight: 800;
+
+        h1, h2, h3, h4, h5, h6,
+        p, label, span, div {
+            color: #000000;
         }
-        .kpi-val {
-            font-size: 26px;
+
+        .dashboard-title {
+            font-size: 2.1rem;
             font-weight: 800;
             color: #000000 !important;
-            margin-top: 4px;
+            margin-bottom: 0.2rem;
         }
-        .study-plan-card {
-            background-color: #fffbe3;
-            border: 1.5px solid #fde047;
-            border-radius: 10px;
-            padding: 16px;
-            margin-bottom: 12px;
+
+        .dashboard-subtitle {
+            font-size: 1rem;
+            color: #1e293b !important;
+            margin-bottom: 1.5rem;
         }
-        .study-plan-title {
-            font-weight: 800;
-            color: #854d0e !important;
-            font-size: 14px;
+
+        .academic-card {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 125px;
+            box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08);
+            margin-bottom: 15px;
+        }
+
+        .kpi-title {
+            color: #1e293b !important;
+            font-size: 0.9rem;
+            font-weight: 700;
             margin-bottom: 8px;
         }
-        .study-step {
-            font-size: 13px;
+
+        .kpi-value {
+            color: #000000 !important;
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        .kpi-description {
             color: #1e293b !important;
-            margin-bottom: 6px;
-            font-weight: 500;
+            font-size: 0.82rem;
+            margin-top: 4px;
         }
-        .badge-stable {
-            background-color: #dcfce7;
-            color: #166534 !important;
-            border: 1px solid #86efac;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
+
+        .status-good {
+            display: inline-block;
+            background: #dcfce7;
+            border: 1px solid #166534;
+            color: #000000 !important;
+            border-radius: 999px;
+            padding: 7px 13px;
+            font-weight: 800;
         }
-        .badge-support {
-            background-color: #fee2e2;
-            color: #991b1b !important;
-            border: 1px solid #fca5a5;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
+
+        .status-support {
+            display: inline-block;
+            background: #fef3c7;
+            border: 1px solid #92400e;
+            color: #000000 !important;
+            border-radius: 999px;
+            padding: 7px 13px;
+            font-weight: 800;
         }
+
+        .rank-card {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08);
+        }
+
+        .rank-number {
+            font-size: 1.7rem;
+            font-weight: 900;
+            color: #000000 !important;
+        }
+
+        .rank-name {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #000000 !important;
+        }
+
+        .rank-id {
+            color: #1e293b !important;
+            font-size: 0.85rem;
+        }
+
+        .rank-mark {
+            font-size: 1.4rem;
+            font-weight: 900;
+            color: #000000 !important;
+            margin-top: 8px;
+        }
+
+        .study-step {
+            background: #ffffff;
+            border-left: 5px solid #000000;
+            border-top: 1px solid #cbd5e1;
+            border-right: 1px solid #cbd5e1;
+            border-bottom: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 13px 16px;
+            margin: 8px 0;
+            color: #000000 !important;
+        }
+
+        .section-heading {
+            color: #000000 !important;
+            font-size: 1.35rem;
+            font-weight: 800;
+            margin-top: 1rem;
+            margin-bottom: 0.8rem;
+        }
+
+        [data-testid="stMetricValue"] {
+            color: #000000 !important;
+        }
+
+        [data-testid="stMetricLabel"] {
+            color: #000000 !important;
+        }
+
+        .stSelectbox label,
+        .stRadio label {
+            color: #000000 !important;
+            font-weight: 700 !important;
+        }
+
         .stDataFrame {
-            background-color: #ffffff !important;
-            border: 1.5px solid #cbd5e1 !important;
-            border-radius: 10px !important;
+            border: 1px solid #cbd5e1;
+        }
+
+        footer {
+            visibility: hidden;
         }
     </style>
-""", unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True,
+)
 
-# --- DATA PROCESSING & PRIMARY KEY CONSOLIDATION ---
-@st.cache_resource
-def load_and_prepare_academic_data():
-    excel_path = "data/Subject_Analytics_Dataset_200_Students.xlsx"
-    
-    if not os.path.exists(excel_path):
-        np.random.seed(42)
-        n = 200
-        raw_df = pd.DataFrame({
-            "Student_ID": [f"S{str(i).zfill(3)}" for i in range(1, n + 1)],
-            "Student_Name": [f"Student {i}" for i in range(1, n + 1)],
-            "Semester": np.random.choice(["Semester 1", "Semester 2", "Semester 3", "Semester 4"], size=n),
-            "Gender": np.random.choice(["Female", "Male"], size=n, p=[0.5, 0.5]),
-            "Department": np.random.choice(["CSE", "ECE", "EEE", "Mechanical"], size=n),
-            "Attendance": np.random.uniform(60, 100, size=n),
-            "Final_Marks": np.random.uniform(40, 98, size=n),
-            "Midterm_Marks": np.random.uniform(35, 95, size=n),
-            "Quiz_Score": np.random.uniform(50, 100, size=n),
-            "Assignment_Score": np.random.uniform(50, 100, size=n)
-        })
-    else:
-        raw_df = pd.read_excel(excel_path)
 
-    raw_df.columns = raw_df.columns.str.strip()
-    for col in raw_df.select_dtypes(include=['object']).columns:
-        raw_df[col] = raw_df[col].astype(str).str.strip()
+# ============================================================
+# DATA LOADING
+# ============================================================
 
-    # Treat Student_ID as Primary Key by aggregating subject records per unique student ID
-    agg_dict = {
-        "Student_Name": "first",
-        "Semester": "first",
-        "Gender": "first",
-        "Department": "first",
-        "Attendance": "mean",
-        "Final_Marks": "mean",
-        "Midterm_Marks": "mean",
-        "Quiz_Score": "mean",
-        "Assignment_Score": "mean"
-    }
-    present_cols = {k: v for k, v in agg_dict.items() if k in raw_df.columns}
-    df = raw_df.groupby("Student_ID").agg(present_cols).reset_index()
+DATA_PATH = "data/Subject_Analytics_Dataset_200_Students.xlsx"
 
-    if "performance_trend" not in df.columns:
-        df["performance_trend"] = np.where(df["Final_Marks"] >= df["Midterm_Marks"], "Improving/Stable", "Needs Attention")
 
-    if "missed_assessments" not in df.columns:
-        df["missed_assessments"] = np.where(df["Attendance"] < 75, 2, 0)
+@st.cache_data
+def load_data(path):
+    if not os.path.exists(path):
+        return None
 
-    trend_num = df["performance_trend"].map({"Improving/Stable": 1, "Needs Attention": -1}).fillna(0)
-    feature_cols = ["Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks", "missed_assessments"]
-    
-    X = df[feature_cols].copy()
-    X["trend_numeric"] = trend_num
+    raw = pd.read_excel(path)
 
-    total_score = (df["Attendance"] * 0.25) + (df["Final_Marks"] * 0.35) + (df["Midterm_Marks"] * 0.25) + (df["Quiz_Score"] * 0.15)
-    
-    # Adjusted threshold to ensure both classes (0 and 1) exist in target variable
-    median_score = total_score.median()
-    df["needs_support_target"] = np.where(total_score < median_score, 1, 0)
-    y = df["needs_support_target"]
-
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
-    rf_model.fit(X_train, y_train)
-    rf_report = classification_report(y_test, rf_model.predict(X_test), output_dict=True, zero_division=0)
-
-    df["Needs_Learning_Support"] = rf_model.predict(X)
-    
-    # Safe probability extraction supporting single or multi-class classification outputs
-    probs = rf_model.predict_proba(X)
-    if probs.shape[1] > 1:
-        df["Support_Need_Index"] = probs[:, 1]
-    else:
-        df["Support_Need_Index"] = probs[:, 0]
-
-    def calculate_grade(m):
-        if m >= 80: return "A"
-        elif m >= 70: return "B"
-        elif m >= 60: return "C"
-        elif m >= 50: return "D"
-        else: return "F"
-
-    df["Grade"] = df["Final_Marks"].apply(calculate_grade)
-
-    return df, rf_model, rf_report, feature_cols
-
-df, rf_model, rf_report, feature_cols = load_and_prepare_academic_data()
-
-# --- SIDEBAR NAVIGATION ---
-with st.sidebar:
-    st.markdown("## 📚 Academic Navigation")
-    st.markdown("Select options to view student learning results.")
-    st.markdown("---")
-    
-    selected_dept = st.selectbox("Department Filter", options=["All Departments"] + sorted(df["Department"].unique().tolist()))
-    selected_gender = st.selectbox("Gender Filter", options=["All", "Female", "Male"])
-    
-    st.markdown("---")
-    st.markdown("##### 🏫 View Options")
-    selected_section = st.radio(
-        "Choose Dashboard View",
-        ["📊 Student Overview Dashboard", "👤 Student Profile Study", "🏫 Class Learning Progress", "🤖 AI Model Verification"]
+    # Clean column names
+    raw.columns = (
+        raw.columns.astype(str)
+        .str.strip()
+        .str.replace(" ", "_")
+        .str.replace("-", "_")
     )
 
-active_df = df.copy()
-if selected_dept != "All Departments":
-    active_df = active_df[active_df["Department"] == selected_dept]
-if selected_gender != "All":
-    active_df = active_df[active_df["Gender"] == selected_gender]
+    return raw
 
 
-# ==============================================================================
-# VIEW 1: 📊 STUDENT OVERVIEW DASHBOARD
-# ==============================================================================
-if selected_section == "📊 Student Overview Dashboard":
-    st.markdown("### 📊 Student Learning Overview Dashboard")
-    st.markdown("A complete summary of enrolled students, marks, attendance rates, and top performers.")
-    
-    o1, o2, o3, o4 = st.columns(4)
-    with o1:
-        st.markdown(f"""
-            <div class='kpi-card'>
-                <div class='kpi-title'>Total Enrolled Students</div>
-                <div class='kpi-val'>{active_df['Student_ID'].nunique()}</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with o2:
-        st.markdown(f"""
-            <div class='kpi-card'>
-                <div class='kpi-title'>Average Student Mark</div>
-                <div class='kpi-val'>{active_df['Final_Marks'].mean():.1f} / 100</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with o3:
-        st.markdown(f"""
-            <div class='kpi-card'>
-                <div class='kpi-title'>Overall Pass Rate</div>
-                <div class='kpi-val'>{(active_df['Final_Marks'] >= 50).mean()*100:.1f}%</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with o4:
-        st.markdown(f"""
-            <div class='kpi-card' style='border-left-color: #ef4444;'>
-                <div class='kpi-title'>Students Needing Support</div>
-                <div class='kpi-val'>{active_df['Needs_Learning_Support'].sum()}</div>
-            </div>
-        """, unsafe_allow_html=True)
+raw_df = load_data(DATA_PATH)
 
-    st.markdown("<br>", unsafe_allow_html=True)
+if raw_df is None:
+    st.error(
+        f"Dataset not found at `{DATA_PATH}`. "
+        "Please place Subject_Analytics_Dataset_200_Students.xlsx "
+        "inside the `data` folder."
+    )
+    st.stop()
 
-    st.markdown("<div class='student-card'>", unsafe_allow_html=True)
-    st.markdown("<h4 style='font-size: 16px; font-weight: 800; color: #000000;'>🏆 Top Academic Performers</h4>", unsafe_allow_html=True)
-    
-    top_students = active_df.sort_values(by="Final_Marks", ascending=False).head(3)
-    
-    r1, r2, r3 = st.columns(3)
-    rank_cols = [r1, r2, r3]
-    rank_labels = ["🥇 Rank 1", "🥈 Rank 2", "🥉 Rank 3"]
-    
-    for idx, (_, row) in enumerate(top_students.iterrows()):
-        if idx < 3:
-            with rank_cols[idx]:
-                st.markdown(f"""
-                    <div style='background-color: #f1f5f9; border: 1.5px solid #cbd5e1; border-radius: 8px; padding: 14px; text-align: center;'>
-                        <div style='font-size: 14px; font-weight: 800; color: #1e293b;'>{rank_labels[idx]}</div>
-                        <div style='font-size: 16px; font-weight: 800; color: #000000; margin-top: 4px;'>{row['Student_Name']}</div>
-                        <div style='font-size: 12px; color: #334155; font-weight: 700;'>ID: {row['Student_ID']}</div>
-                        <div style='font-size: 18px; font-weight: 800; color: #2563eb; margin-top: 6px;'>Average: {row['Final_Marks']:.1f}%</div>
-                    </div>
-                """, unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
 
-    c_left, c_right = st.columns(2)
-    with c_left:
-        st.markdown("<div class='student-card'>", unsafe_allow_html=True)
-        st.markdown("<h4 style='font-size: 15px; font-weight: 800; color: #000000;'>🏫 Average Marks by Department</h4>", unsafe_allow_html=True)
-        dept_avg = active_df.groupby("Department")["Final_Marks"].mean().reset_index()
-        fig_dept = px.bar(dept_avg, x="Department", y="Final_Marks", text_auto='.1f', color_discrete_sequence=["#2563eb"])
-        fig_dept.update_traces(textfont=dict(color="#000000", size=12))
-        fig_dept.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=260,
-            xaxis=dict(tickfont=dict(color="#000000", size=12)),
-            yaxis=dict(tickfont=dict(color="#000000", size=12), gridcolor="#e2e8f0", title=dict(text="Average Mark", font=dict(color="#000000")))
+# ============================================================
+# COLUMN VALIDATION
+# ============================================================
+
+required_columns = [
+    "Student_ID",
+    "Final_Marks",
+    "Midterm_Marks",
+    "Attendance",
+    "Quiz_Score",
+]
+
+missing_columns = [
+    col for col in required_columns
+    if col not in raw_df.columns
+]
+
+if missing_columns:
+    st.error(
+        "The dataset is missing the following required columns: "
+        + ", ".join(missing_columns)
+    )
+    st.stop()
+
+
+# ============================================================
+# DATA CLEANING & STUDENT-LEVEL AGGREGATION
+# ============================================================
+
+numeric_columns = [
+    "Final_Marks",
+    "Midterm_Marks",
+    "Attendance",
+    "Quiz_Score",
+]
+
+# Assignment column can have slightly different names
+assignment_candidates = [
+    "Assignment",
+    "Assignment_Score",
+    "Assignment_Marks",
+    "Assignment_Score_Marks",
+]
+
+assignment_column = next(
+    (col for col in assignment_candidates if col in raw_df.columns),
+    None,
+)
+
+if assignment_column:
+    numeric_columns.append(assignment_column)
+
+for col in numeric_columns:
+    raw_df[col] = pd.to_numeric(raw_df[col], errors="coerce")
+
+
+# Identify demographic/text fields
+text_columns = raw_df.select_dtypes(include=["object"]).columns.tolist()
+
+# Student_ID should remain the primary key, not a demographic field.
+text_columns = [
+    col for col in text_columns
+    if col != "Student_ID"
+]
+
+
+# Mean for numeric academic measures.
+# First non-null value for text/demographic fields.
+aggregation = {}
+
+for col in raw_df.columns:
+    if col == "Student_ID":
+        continue
+
+    if col in numeric_columns:
+        aggregation[col] = "mean"
+    elif col in text_columns:
+        aggregation[col] = "first"
+    else:
+        aggregation[col] = "first"
+
+
+df = raw_df.groupby("Student_ID", as_index=False).agg(aggregation)
+
+
+# ============================================================
+# OPTIONAL COLUMN DISCOVERY
+# ============================================================
+
+def find_column(dataframe, candidates):
+    for candidate in candidates:
+        if candidate in dataframe.columns:
+            return candidate
+    return None
+
+
+name_column = find_column(
+    df,
+    [
+        "Student_Name",
+        "Name",
+        "StudentName",
+        "Student",
+    ],
+)
+
+department_column = find_column(
+    df,
+    [
+        "Department",
+        "Department_Name",
+        "Program",
+        "Course",
+    ],
+)
+
+semester_column = find_column(
+    df,
+    [
+        "Semester",
+        "Semester_Name",
+        "Term",
+    ],
+)
+
+
+# Fallback values if optional fields are absent
+if name_column is None:
+    df["Student_Name_Display"] = df["Student_ID"].astype(str)
+    name_column = "Student_Name_Display"
+
+if department_column is None:
+    df["Department_Display"] = "General"
+    department_column = "Department_Display"
+
+if semester_column is None:
+    df["Semester_Display"] = "Not specified"
+    semester_column = "Semester_Display"
+
+
+# ============================================================
+# FEATURE ENGINEERING
+# ============================================================
+
+df["performance_trend"] = np.where(
+    df["Final_Marks"] >= df["Midterm_Marks"],
+    "Improving/Stable",
+    "Needs Attention",
+)
+
+df["missed_assessments"] = np.where(
+    df["Attendance"] < 75,
+    2,
+    0,
+)
+
+df["Composite_Score"] = (
+    (df["Attendance"] * 0.25)
+    + (df["Final_Marks"] * 0.35)
+    + (df["Midterm_Marks"] * 0.25)
+    + (df["Quiz_Score"] * 0.15)
+)
+
+df["needs_support_target"] = (
+    df["Composite_Score"] < 58
+).astype(int)
+
+
+# ============================================================
+# GRADE MAPPING
+# ============================================================
+
+def calculate_grade(mark):
+    if pd.isna(mark):
+        return "F"
+    if mark >= 80:
+        return "A"
+    if mark >= 70:
+        return "B"
+    if mark >= 60:
+        return "C"
+    if mark >= 50:
+        return "D"
+    return "F"
+
+
+df["Grade"] = df["Final_Marks"].apply(calculate_grade)
+
+
+# ============================================================
+# MACHINE LEARNING MODEL
+# ============================================================
+
+feature_columns = [
+    "Attendance",
+    "Final_Marks",
+    "Midterm_Marks",
+    "Quiz_Score",
+]
+
+X = df[feature_columns].copy()
+y = df["needs_support_target"].copy()
+
+# Fill missing numeric values
+X = X.fillna(X.median(numeric_only=True))
+
+model = None
+model_report = None
+feature_importance = None
+
+# A classification model requires at least two classes.
+if y.nunique() >= 2 and len(df) >= 10:
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=0.20,
+        random_state=42,
+        stratify=y,
+    )
+
+    model = RandomForestClassifier(
+        n_estimators=250,
+        random_state=42,
+        class_weight="balanced",
+        min_samples_leaf=2,
+    )
+
+    model.fit(X_train, y_train)
+
+    predictions = model.predict(X_test)
+
+    model_report = classification_report(
+        y_test,
+        predictions,
+        output_dict=True,
+        zero_division=0,
+    )
+
+    feature_importance = pd.DataFrame(
+        {
+            "Indicator": feature_columns,
+            "Importance": model.feature_importances_,
+        }
+    ).sort_values(
+        "Importance",
+        ascending=True,
+    )
+
+    # Probability of needing academic support
+    if 1 in model.classes_:
+        support_index = model.predict_proba(X)[:, list(model.classes_).index(1)]
+    else:
+        support_index = np.zeros(len(df))
+
+else:
+    # Safe fallback if the dataset contains only one target class.
+    support_index = df["needs_support_target"].astype(float).values
+
+df["Support_Need_Index"] = support_index * 100
+
+
+# ============================================================
+# LEARNING STATUS
+# ============================================================
+
+df["Learning_Status"] = np.where(
+    df["needs_support_target"] == 1,
+    "Learning Support Needed",
+    "Good Academic Standing",
+)
+
+
+# ============================================================
+# HELPER FUNCTIONS
+# ============================================================
+
+def academic_status_badge(status):
+    if status == "Good Academic Standing":
+        return (
+            '<span class="status-good">'
+            "✅ Good Academic Standing"
+            "</span>"
         )
-        st.plotly_chart(fig_dept, use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
 
-    with c_right:
-        st.markdown("<div class='student-card'>", unsafe_allow_html=True)
-        st.markdown("<h4 style='font-size: 15px; font-weight: 800; color: #000000;'>📅 Attendance Class Ratio</h4>", unsafe_allow_html=True)
-        att_cats = np.where(active_df["Attendance"] >= 75, "Regular Attendance (≥75%)", "Low Attendance (<75%)")
-        att_df = pd.Series(att_cats).value_counts().reset_index()
-        att_df.columns = ["Status", "Count"]
-        fig_pie = px.pie(att_df, values="Count", names="Status", color_discrete_sequence=["#16a34a", "#dc2626"])
-        fig_pie.update_traces(textinfo="percent+label", textfont=dict(color="#000000", size=12))
-        fig_pie.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=260, showlegend=False)
-        st.plotly_chart(fig_pie, use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+    return (
+        '<span class="status-support">'
+        "⚠️ Learning Support Needed"
+        "</span>"
+    )
 
 
-# ==============================================================================
-# VIEW 2: 👤 STUDENT PROFILE STUDY
-# ==============================================================================
-elif selected_section == "👤 Student Profile Study":
-    st.markdown("### 👤 Student Profile & Study Guidance")
-    st.markdown("Examine individual student marks, attendance, and step-by-step learning support recommendations.")
-    
-    student_opts = active_df[["Student_ID", "Student_Name"]].drop_duplicates().sort_values(by="Student_ID")
-    student_opts["Label"] = student_opts["Student_ID"].astype(str) + " — " + student_opts["Student_Name"].astype(str)
-    
-    selected_stu_label = st.selectbox("Select Student Record", options=student_opts["Label"].tolist())
-    selected_stu_id = selected_stu_label.split(" — ")[0]
-    
-    stu_row = active_df[active_df["Student_ID"] == selected_stu_id].iloc[0]
-    stu_name = stu_row["Student_Name"]
-    stu_dept = stu_row["Department"]
-    stu_sem = stu_row["Semester"] if "Semester" in stu_row else "Semester 1"
-    
-    avg_final = stu_row["Final_Marks"]
-    avg_att = stu_row["Attendance"]
-    support_index = stu_row["Support_Need_Index"]
-    needs_help = support_index >= 0.5
+def create_kpi(title, value, description=""):
+    st.markdown(
+        f"""
+        <div class="academic-card">
+            <div class="kpi-title">{title}</div>
+            <div class="kpi-value">{value}</div>
+            <div class="kpi-description">{description}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    k1, k2, k3, k4 = st.columns(4)
-    with k1:
-        st.markdown(f"""
-            <div class='kpi-card'>
-                <div class='kpi-title'>Student Name & ID</div>
-                <div class='kpi-val' style='font-size:18px;'>{stu_name}</div>
-                <div style='font-size:12px; color:#334155; font-weight:700;'>ID: {selected_stu_id}</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with k2:
-        st.markdown(f"""
-            <div class='kpi-card'>
-                <div class='kpi-title'>Department / Semester</div>
-                <div class='kpi-val' style='font-size:18px;'>{stu_dept}</div>
-                <div style='font-size:12px; color:#334155; font-weight:700;'>{stu_sem}</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with k3:
-        st.markdown(f"""
-            <div class='kpi-card'>
-                <div class='kpi-title'>Average Mark</div>
-                <div class='kpi-val'>{avg_final:.1f} / 100</div>
-                <div style='font-size:12px; color:#334155; font-weight:700;'>Attendance: {avg_att:.1f}%</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with k4:
-        badge_html = "<span class='badge-support'>⚠️ Learning Support Needed</span>" if needs_help else "<span class='badge-stable'>✅ Good Academic Standing</span>"
-        st.markdown(f"""
-            <div class='kpi-card' style='border-left-color: {"#ef4444" if needs_help else "#16a34a"};'>
-                <div class='kpi-title'>Learning Status</div>
-                <div style='margin-top:6px;'>{badge_html}</div>
-                <div style='font-size:12px; color:#334155; font-weight:700; margin-top:4px;'>Support Need Index: <b>{support_index:.2f}</b></div>
-            </div>
-        """, unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    col_left, col_right = st.columns([1.3, 1.7])
-
-    with col_left:
-        st.markdown("<div class='student-card'>", unsafe_allow_html=True)
-        st.markdown("<h4 style='font-size: 15px; font-weight: 800; color: #000000;'>📖 Personalized Study Improvement Steps</h4>", unsafe_allow_html=True)
-        
-        if needs_help:
-            steps = []
-            if stu_row["Quiz_Score"] < 60:
-                steps.append(f"Quiz mark is low ({stu_row['Quiz_Score']:.0f}/100). Review topic notes and practice weekly quiz questions.")
-            if stu_row["Midterm_Marks"] < 60:
-                steps.append(f"Midterm mark is low ({stu_row['Midterm_Marks']:.0f}/100). Attend teacher office hours for extra concept explanations.")
-            if stu_row["Attendance"] < 75:
-                steps.append(f"Class attendance is low ({stu_row['Attendance']:.1f}%). Ensure regular attendance to avoid missing key lessons.")
-            steps.append("Complete assigned revision worksheets before final examinations.")
-            
-            rendered_steps = "".join([f"<div class='study-step'>📌 {step}</div>" for step in steps])
-            st.markdown(f"""
-                <div class='study-plan-card'>
-                    <div class='study-plan-title'>⚠️ Focus Areas Needed (Support Index: {support_index:.2f})</div>
-                    {rendered_steps}
-                </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown("""
-                <div style='background-color: #dcfce7; border: 1.5px solid #86efac; border-radius: 8px; padding: 16px;'>
-                    <div style='font-weight: 800; color: #166534; font-size: 14px;'>✅ Strong Academic Performance</div>
-                    <div style='font-size: 13px; color: #1e293b; margin-top: 4px;'>Overall performance meets or exceeds standard requirements. Maintain current study habits!</div>
-                </div>
-            """, unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    with col_right:
-        st.markdown("<div class='student-card'>", unsafe_allow_html=True)
-        st.markdown("<h4 style='font-size: 15px; font-weight: 800; color: #000000;'>📊 Performance Metrics Bar Overview</h4>", unsafe_allow_html=True)
-        
-        metrics_bar_df = pd.DataFrame({
-            "Metric": ["Attendance", "Quiz Score", "Assignment", "Midterm Mark", "Final Mark"],
-            "Score": [stu_row["Attendance"], stu_row["Quiz_Score"], stu_row["Assignment_Score"], stu_row["Midterm_Marks"], stu_row["Final_Marks"]]
-        })
-        fig_bar_ind = px.bar(metrics_bar_df, x="Metric", y="Score", text_auto='.1f', color_discrete_sequence=["#2563eb"])
-        fig_bar_ind.update_traces(textfont=dict(color="#000000", size=12))
-        fig_bar_ind.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=260,
-            xaxis=dict(tickfont=dict(color="#000000", size=12)),
-            yaxis=dict(tickfont=dict(color="#000000", size=12), range=[0, 100], gridcolor="#cbd5e1")
+def apply_chart_format(fig, title=None):
+    if title:
+        fig.update_layout(
+            title={
+                "text": title,
+                "font": {
+                    "color": "#000000",
+                    "size": 18,
+                },
+            }
         )
-        st.plotly_chart(fig_bar_ind, use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("<div class='student-card'>", unsafe_allow_html=True)
-    st.markdown("<h4 style='font-size: 15px; font-weight: 800; color: #000000;'>📖 Student Record Summary Table</h4>", unsafe_allow_html=True)
-    
-    single_record_df = pd.DataFrame([{
-        "Student ID": stu_row["Student_ID"],
-        "Name": stu_row["Student_Name"],
-        "Attendance %": f"{stu_row['Attendance']:.1f}",
-        "Quiz Mark": f"{stu_row['Quiz_Score']:.0f}",
-        "Assignment Mark": f"{stu_row['Assignment_Score']:.0f}",
-        "Midterm Mark": f"{stu_row['Midterm_Marks']:.0f}",
-        "Final Mark": f"{stu_row['Final_Marks']:.0f}",
-        "Letter Grade": stu_row["Grade"],
-        "Learning Status": "⚠️ Needs Help" if needs_help else "✅ Stable"
-    }])
-    st.dataframe(single_record_df, use_container_width=True, hide_index=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    fig.update_layout(
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
+        font={
+            "color": "#000000",
+            "size": 13,
+        },
+        margin=dict(l=50, r=30, t=60, b=50),
+        legend=dict(
+            font=dict(color="#000000"),
+        ),
+    )
+
+    fig.update_xaxes(
+        tickfont=dict(color="#000000"),
+        title_font=dict(color="#000000"),
+        showgrid=True,
+        gridcolor="#cbd5e1",
+        zerolinecolor="#000000",
+    )
+
+    fig.update_yaxes(
+        tickfont=dict(color="#000000"),
+        title_font=dict(color="#000000"),
+        showgrid=True,
+        gridcolor="#cbd5e1",
+        zerolinecolor="#000000",
+    )
+
+    return fig
 
 
-# ==============================================================================
-# VIEW 3: 🏫 CLASS LEARNING PROGRESS
-# ==============================================================================
-elif selected_section == "🏫 Class Learning Progress":
-    st.markdown("### 🏫 Class Learning Progress & Score Trends")
-    st.markdown("Classwide performance summaries across departments.")
-    
-    c1, c2, c3 = st.columns(3)
+# ============================================================
+# SIDEBAR
+# ============================================================
+
+st.sidebar.markdown(
+    """
+    <h1 style="color:#000000;">🎓 Academic Dashboard</h1>
+    <p style="color:#000000;">
+        Student Learning Support & Performance
+    </p>
+    """,
+    unsafe_allow_html=True,
+)
+
+view = st.sidebar.radio(
+    "Select Dashboard View",
+    [
+        "📊 Student Overview Dashboard",
+        "👤 Student Profile Study",
+        "🏫 Class Learning Progress",
+        "🤖 AI Model Verification",
+    ],
+)
+
+st.sidebar.markdown("---")
+
+st.sidebar.markdown(
+    f"""
+    <p style="color:#000000;">
+        <b>Unique Students:</b> {df["Student_ID"].nunique()}
+    </p>
+    <p style="color:#000000;">
+        <b>Student Records:</b> {len(raw_df)}
+    </p>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+# ============================================================
+# VIEW 1 — STUDENT OVERVIEW DASHBOARD
+# ============================================================
+
+if view == "📊 Student Overview Dashboard":
+
+    st.markdown(
+        '<div class="dashboard-title">📊 Student Overview Dashboard</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<div class="dashboard-subtitle">'
+        "A summary of student academic achievement, attendance, "
+        "and learning support requirements."
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    total_students = df["Student_ID"].nunique()
+
+    average_mark = df["Final_Marks"].mean()
+
+    pass_rate = (
+        (df["Final_Marks"] >= 50).mean() * 100
+    )
+
+    support_count = int(
+        df["needs_support_target"].sum()
+    )
+
+    # ---------------- KPI CARDS ----------------
+
+    c1, c2, c3, c4 = st.columns(4)
+
     with c1:
-        st.markdown(f"<div class='kpi-card'><div class='kpi-title'>Total Active Students</div><div class='kpi-val'>{active_df['Student_ID'].nunique()}</div></div>", unsafe_allow_html=True)
+        create_kpi(
+            "Total Enrolled Students",
+            f"{total_students:,}",
+            "Unique Student IDs",
+        )
+
     with c2:
-        st.markdown(f"<div class='kpi-card'><div class='kpi-title'>Class Average Final Mark</div><div class='kpi-val'>{active_df['Final_Marks'].mean():.1f}</div></div>", unsafe_allow_html=True)
+        create_kpi(
+            "Average Student Mark",
+            f"{average_mark:.1f} / 100",
+            "Average final mark",
+        )
+
     with c3:
-        st.markdown(f"<div class='kpi-card'><div class='kpi-title'>Class Average Attendance</div><div class='kpi-val'>{active_df['Attendance'].mean():.1f}%</div></div>", unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    r1, r2 = st.columns(2)
-    with r1:
-        st.markdown("<div class='student-card'>", unsafe_allow_html=True)
-        st.markdown("<h4 style='font-size: 15px; font-weight: 800; color: #000000;'>📊 Midterm vs Final Marks by Department</h4>", unsafe_allow_html=True)
-        dept_grp = active_df.groupby("Department")[["Midterm_Marks", "Final_Marks"]].mean().reset_index()
-        fig_bar = px.bar(dept_grp, x="Department", y=["Midterm_Marks", "Final_Marks"], barmode="group", color_discrete_sequence=["#2563eb", "#9333ea"])
-        fig_bar.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=280,
-            xaxis=dict(tickfont=dict(color="#000000", size=12)),
-            yaxis=dict(tickfont=dict(color="#000000", size=12), gridcolor="#cbd5e1"),
-            legend=dict(font=dict(color="#000000"))
+        create_kpi(
+            "Overall Pass Rate",
+            f"{pass_rate:.1f}%",
+            "Students scoring 50 or above",
         )
-        st.plotly_chart(fig_bar, use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
 
-    with r2:
-        st.markdown("<div class='student-card'>", unsafe_allow_html=True)
-        st.markdown("<h4 style='font-size: 15px; font-weight: 800; color: #000000;'>📈 Grade Distribution Breakdown</h4>", unsafe_allow_html=True)
-        grade_counts = active_df["Grade"].value_counts().reset_index()
-        grade_counts.columns = ["Grade", "Count"]
-        fig_grade = px.bar(grade_counts, x="Grade", y="Count", text_auto=True, color="Grade", color_discrete_sequence=px.colors.qualitative.Set2)
-        fig_grade.update_traces(textfont=dict(color="#000000", size=12))
-        fig_grade.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=280, showlegend=False,
-            xaxis=dict(tickfont=dict(color="#000000", size=12)),
-            yaxis=dict(tickfont=dict(color="#000000", size=12), gridcolor="#cbd5e1")
+    with c4:
+        create_kpi(
+            "Students Needing Support",
+            f"{support_count:,}",
+            "Based on the academic support criterion",
         )
-        st.plotly_chart(fig_grade, use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
 
+    # ---------------- TOP PERFORMERS ----------------
 
-# ==============================================================================
-# VIEW 4: 🤖 AI MODEL VERIFICATION
-# ==============================================================================
-elif selected_section == "🤖 AI Model Verification":
-    st.markdown("### 🤖 Academic Support Model Verification")
-    st.markdown("Verification metrics for the Machine Learning model predicting students who need learning support.")
-    
-    m1, m2 = st.columns(2)
-    with m1:
-        st.markdown("<div class='student-card'>", unsafe_allow_html=True)
-        st.markdown("<h4 style='font-size: 15px; font-weight: 800; color: #000000;'>🌲 Machine Learning Classification Accuracy</h4>", unsafe_allow_html=True)
-        
-        # Safe metric extraction from classification report dictionary
-        classes_in_report = [k for k in rf_report.keys() if k not in ['accuracy', 'macro avg', 'weighted avg']]
-        if len(classes_in_report) > 0:
-            first_cls = classes_in_report[0]
-            second_cls = classes_in_report[1] if len(classes_in_report) > 1 else first_cls
-            metrics_df = pd.DataFrame({
-                "Academic Category": ["Good Standing (0)", "Needs Learning Support (1)"],
-                "Precision Score": [rf_report[first_cls]['precision'], rf_report[second_cls]['precision']],
-                "Recall Score": [rf_report[first_cls]['recall'], rf_report[second_cls]['recall']],
-                "F1-Score": [rf_report[first_cls]['f1-score'], rf_report[second_cls]['f1-score']]
-            })
-        else:
-            metrics_df = pd.DataFrame(columns=["Academic Category", "Precision Score", "Recall Score", "F1-Score"])
-            
-        st.dataframe(metrics_df.style.format(precision=2), use_container_width=True, hide_index=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-heading">🏆 Top Academic Performers</div>',
+        unsafe_allow_html=True,
+    )
 
-    with m2:
-        st.markdown("<div class='student-card'>", unsafe_allow_html=True)
-        st.markdown("<h4 style='font-size: 15px; font-weight: 800; color: #000000;'>🔍 Most Important Performance Factors</h4>", unsafe_allow_html=True)
-        feat_df = pd.DataFrame({
-            "Academic Indicator": feature_cols,
-            "Importance Weight": rf_model.feature_importances_
-        }).sort_values(by="Importance Weight", ascending=True)
-        
-        fig_feat = px.bar(feat_df, x="Importance Weight", y="Academic Indicator", orientation="h", color_discrete_sequence=["#2563eb"])
-        fig_feat.update_layout(
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=220,
-            xaxis=dict(tickfont=dict(color="#000000", size=11), gridcolor="#cbd5e1"),
-            yaxis=dict(tickfont=dict(color="#000000", size=11))
+    top_students = (
+        df.sort_values("Final_Marks", ascending=False)
+        .head(3)
+    )
+
+    rank_columns = st.columns(3)
+
+    for rank, (_, student) in enumerate(
+        top_students.iterrows(),
+        start=1,
+    ):
+        with rank_columns[rank - 1]:
+            st.markdown(
+                f"""
+                <div class="rank-card">
+                    <div class="rank-number">Rank {rank}</div>
+                    <div class="rank-name">
+                        {student[name_column]}
+                    </div>
+                    <div class="rank-id">
+                        Student ID: {student["Student_ID"]}
+                    </div>
+                    <div class="rank-mark">
+                        {student["Final_Marks"]:.1f} / 100
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    # ---------------- CHARTS ----------------
+
+    st.markdown(
+        '<div class="section-heading">📈 Academic Performance Overview</div>',
+        unsafe_allow_html=True,
+    )
+
+    chart_col1, chart_col2 = st.columns(2)
+
+    with chart_col1:
+
+        department_marks = (
+            df.groupby(department_column)["Final_Marks"]
+            .mean()
+            .reset_index()
+            .sort_values("Final_Marks", ascending=False)
         )
-        st.plotly_chart(fig_feat, use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+
+        fig_department = px.bar(
+            department_marks,
+            x=department_column,
+            y="Final_Marks",
+            text="Final_Marks",
+            labels={
+                department_column: "Department",
+                "Final_Marks": "Average Final Mark",
+            },
+        )
+
+        fig_department.update_traces(
+            texttemplate="%{text:.1f}",
+            textposition="outside",
+        )
+
+        fig_department = apply_chart_format(
+            fig_department,
+            "Average Marks by Department",
+        )
+
+        st.plotly_chart(
+            fig_department,
+            use_container_width=True,
+        )
+
+    with chart_col2:
+
+        attendance_labels = [
+            "Regular Attendance (≥75%)",
+            "Low Attendance (<75%)",
+        ]
+
+        regular = int(
+            (df["Attendance"] >= 75).sum()
+        )
+
+        low = int(
+            (df["Attendance"] < 75).sum()
+        )
+
+        attendance_data = pd.DataFrame(
+            {
+                "Attendance Category": attendance_labels,
+                "Students": [regular, low],
+            }
+        )
+
+        fig_attendance = px.pie(
+            attendance_data,
+            names="Attendance Category",
+            values="Students",
+            hole=0.35,
+        )
+
+        fig_attendance.update_traces(
+            textinfo="label+percent+value",
+            textfont=dict(color="#000000"),
+        )
+
+        fig_attendance = apply_chart_format(
+            fig_attendance,
+            "Attendance Class Ratio",
+        )
+
+        st.plotly_chart(
+            fig_attendance,
+            use_container_width=True,
+        )
+
+
+# ============================================================
+# VIEW 2 — STUDENT PROFILE STUDY
+# ============================================================
+
+elif view == "👤 Student Profile Study":
+
+    st.markdown(
+        '<div class="dashboard-title">👤 Student Profile Study</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<div class="dashboard-subtitle">'
+        "Individual student academic performance and personalized "
+        "study improvement guidance."
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    df["Student_Selector"] = (
+        df["Student_ID"].astype(str)
+        + " — "
+        + df[name_column].astype(str)
+    )
+
+    selected_student = st.selectbox(
+        "Select Student",
+        sorted(df["Student_Selector"].tolist()),
+    )
+
+    student = df[
+        df["Student_Selector"] == selected_student
+    ].iloc[0]
+
+    # ---------------- STUDENT SUMMARY ----------------
+
+    st.markdown(
+        '<div class="section-heading">Student Academic Summary</div>',
+        unsafe_allow_html=True,
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        create_kpi(
+            "Student",
+            str(student[name_column]),
+            f"ID: {student['Student_ID']}",
+        )
+
+    with c2:
+        create_kpi(
+            "Department & Semester",
+            str(student[department_column]),
+            f"Semester: {student[semester_column]}",
+        )
+
+    with c3:
+        create_kpi(
+            "Average Mark",
+            f"{student['Final_Marks']:.1f} / 100",
+            f"Grade: {student['Grade']}",
+        )
+
+    with c4:
+        create_kpi(
+            "Attendance",
+            f"{student['Attendance']:.1f}%",
+            f"Support index: {student['Support_Need_Index']:.1f}%",
+        )
+
+    st.markdown(
+        academic_status_badge(
+            student["Learning_Status"]
+        ),
+        unsafe_allow_html=True,
+    )
+
+    # ---------------- STUDY GUIDANCE ----------------
+
+    st.markdown(
+        '<div class="section-heading">'
+        "📚 Personalized Study Improvement Steps"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    steps = []
+
+    if student["Quiz_Score"] < 60:
+        steps.append(
+            "Review quiz topics where marks were below 60%, "
+            "then complete short practice questions for each topic."
+        )
+
+    if student["Attendance"] < 75:
+        steps.append(
+            "Improve class attendance and review lessons missed "
+            "during periods of low attendance."
+        )
+
+    if student["Midterm_Marks"] < 60:
+        steps.append(
+            "Revisit midterm topics and create a weekly revision "
+            "plan focused on concepts with lower marks."
+        )
+
+    if student["Final_Marks"] < student["Midterm_Marks"]:
+        steps.append(
+            "Your final mark is below your midterm mark. "
+            "Compare both assessments and revise topics where "
+            "performance declined."
+        )
+
+    if assignment_column:
+        if student[assignment_column] < 60:
+            steps.append(
+                "Complete additional assignment practice and "
+                "review teacher feedback before the next submission."
+            )
+
+    if not steps:
+        steps.append(
+            "Maintain your current study routine and continue "
+            "regular revision, practice, and class participation."
+        )
+
+    for i, step in enumerate(steps, start=1):
+        st.markdown(
+            f"""
+            <div class="study-step">
+                <b>Step {i}:</b> {step}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # ---------------- PERFORMANCE CHART ----------------
+
+    st.markdown(
+        '<div class="section-heading">📊 Performance Bar Overview</div>',
+        unsafe_allow_html=True,
+    )
+
+    performance_data = {
+        "Assessment": [
+            "Attendance",
+            "Quiz Score",
+            "Assignment",
+            "Midterm Mark",
+            "Final Mark",
+        ],
+        "Score": [
+            student["Attendance"],
+            student["Quiz_Score"],
+            (
+                student[assignment_column]
+                if assignment_column
+                else np.nan
+            ),
+            student["Midterm_Marks"],
+            student["Final_Marks"],
+        ],
+    }
+
+    performance_df = pd.DataFrame(performance_data)
+
+    # Remove unavailable assignment values
+    performance_df = performance_df.dropna(
+        subset=["Score"]
+    )
+
+    fig_performance = px.bar(
+        performance_df,
+        x="Assessment",
+        y="Score",
+        text="Score",
+        labels={
+            "Assessment": "Academic Measure",
+            "Score": "Score / Percentage",
+        },
+    )
+
+    fig_performance.update_traces(
+        texttemplate="%{text:.1f}",
+        textposition="outside",
+    )
+
+    fig_performance.update_yaxes(
+        range=[0, 105]
+    )
+
+    fig_performance = apply_chart_format(
+        fig_performance,
+        "Student Performance by Academic Measure",
+    )
+
+    st.plotly_chart(
+        fig_performance,
+        use_container_width=True,
+    )
+
+    # ---------------- RECORD TABLE ----------------
+
+    st.markdown(
+        '<div class="section-heading">📋 Student Record Summary</div>',
+        unsafe_allow_html=True,
+    )
+
+    record_columns = [
+        "Student_ID",
+        name_column,
+        department_column,
+        semester_column,
+        "Attendance",
+        "Quiz_Score",
+    ]
+
+    if assignment_column:
+        record_columns.append(assignment_column)
+
+    record_columns.extend(
+        [
+            "Midterm_Marks",
+            "Final_Marks",
+            "Grade",
+            "performance_trend",
+            "missed_assessments",
+            "Support_Need_Index",
+            "Learning_Status",
+        ]
+    )
+
+    record = student[record_columns].to_frame().T
+
+    display_names = {
+        "Student_ID": "Student ID",
+        name_column: "Student Name",
+        department_column: "Department",
+        semester_column: "Semester",
+        "Attendance": "Attendance %",
+        "Quiz_Score": "Quiz Score",
+        assignment_column: "Assignment Score",
+        "Midterm_Marks": "Midterm Mark",
+        "Final_Marks": "Final Mark",
+        "performance_trend": "Performance Trend",
+        "missed_assessments": "Missed Assessments",
+        "Support_Need_Index": "Support Need Index",
+        "Learning_Status": "Learning Status",
+    }
+
+    record = record.rename(
+        columns={
+            k: v
+            for k, v in display_names.items()
+            if k is not None and k in record.columns
+        }
+    )
+
+    st.dataframe(
+        record,
+        use_container_width=True,
+        hide_index=True,
+    )
+
+
+# ============================================================
+# VIEW 3 — CLASS LEARNING PROGRESS
+# ============================================================
+
+elif view == "🏫 Class Learning Progress":
+
+    st.markdown(
+        '<div class="dashboard-title">🏫 Class Learning Progress</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<div class="dashboard-subtitle">'
+        "Class-level academic progress, departmental comparison, "
+        "and grade distribution."
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    active_students = int(
+        df["Student_ID"].nunique()
+    )
+
+    class_average_final = df["Final_Marks"].mean()
+
+    class_average_attendance = df["Attendance"].mean()
+
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+        create_kpi(
+            "Active Student Count",
+            f"{active_students:,}",
+            "Unique students in the dataset",
+        )
+
+    with c2:
+        create_kpi(
+            "Class Average Final Mark",
+            f"{class_average_final:.1f} / 100",
+            "Average final assessment mark",
+        )
+
+    with c3:
+        create_kpi(
+            "Class Average Attendance",
+            f"{class_average_attendance:.1f}%",
+            "Average student attendance",
+        )
+
+    # ---------------- DEPARTMENT COMPARISON ----------------
+
+    st.markdown(
+        '<div class="section-heading">'
+        "📈 Departmental Academic Comparison"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    department_comparison = (
+        df.groupby(department_column)[
+            ["Midterm_Marks", "Final_Marks"]
+        ]
+        .mean()
+        .reset_index()
+    )
+
+    department_long = department_comparison.melt(
+        id_vars=[department_column],
+        value_vars=[
+            "Midterm_Marks",
+            "Final_Marks",
+        ],
+        var_name="Assessment",
+        value_name="Average Mark",
+    )
+
+    department_long["Assessment"] = (
+        department_long["Assessment"]
+        .replace(
+            {
+                "Midterm_Marks": "Midterm Mark",
+                "Final_Marks": "Final Mark",
+            }
+        )
+    )
+
+    fig_comparison = px.bar(
+        department_long,
+        x=department_column,
+        y="Average Mark",
+        color="Assessment",
+        barmode="group",
+        text="Average Mark",
+        labels={
+            department_column: "Department",
+            "Average Mark": "Average Mark",
+        },
+    )
+
+    fig_comparison.update_traces(
+        texttemplate="%{text:.1f}",
+        textposition="outside",
+    )
+
+    fig_comparison = apply_chart_format(
+        fig_comparison,
+        "Midterm vs Final Marks by Department",
+    )
+
+    st.plotly_chart(
+        fig_comparison,
+        use_container_width=True,
+    )
+
+    # ---------------- GRADE DISTRIBUTION ----------------
+
+    st.markdown(
+        '<div class="section-heading">📚 Grade Distribution</div>',
+        unsafe_allow_html=True,
+    )
+
+    grade_order = ["A", "B", "C", "D", "F"]
+
+    grade_counts = (
+        df["Grade"]
+        .value_counts()
+        .reindex(grade_order, fill_value=0)
+        .reset_index()
+    )
+
+    grade_counts.columns = [
+        "Grade",
+        "Students",
+    ]
+
+    fig_grades = px.bar(
+        grade_counts,
+        x="Grade",
+        y="Students",
+        text="Students",
+        labels={
+            "Grade": "Letter Grade",
+            "Students": "Number of Students",
+        },
+    )
+
+    fig_grades.update_traces(
+        textposition="outside",
+    )
+
+    fig_grades = apply_chart_format(
+        fig_grades,
+        "Student Grade Distribution",
+    )
+
+    st.plotly_chart(
+        fig_grades,
+        use_container_width=True,
+    )
+
+
+# ============================================================
+# VIEW 4 — AI MODEL VERIFICATION
+# ============================================================
+
+elif view == "🤖 AI Model Verification":
+
+    st.markdown(
+        '<div class="dashboard-title">🤖 AI Model Verification</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<div class="dashboard-subtitle">'
+        "Verification of the academic support prediction model "
+        "using held-out student records."
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    if model is None or model_report is None:
+
+        st.warning(
+            "The prediction model could not be trained because "
+            "the dataset does not contain enough target variation."
+        )
+
+    else:
+
+        # ---------------- CLASSIFICATION PERFORMANCE ----------------
+
+        st.markdown(
+            '<div class="section-heading">'
+            "📋 Classification Performance"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+        report_rows = []
+
+        for label, display_name in [
+            ("0", "Good Academic Standing"),
+            ("1", "Learning Support Needed"),
+        ]:
+            if label in model_report:
+                report_rows.append(
+                    {
+                        "Academic Outcome": display_name,
+                        "Precision": model_report[label]["precision"],
+                        "Recall": model_report[label]["recall"],
+                        "F1-Score": model_report[label]["f1-score"],
+                    }
+                )
+
+        metrics_df = pd.DataFrame(report_rows)
+
+        for col in [
+            "Precision",
+            "Recall",
+            "F1-Score",
+        ]:
+            if col in metrics_df.columns:
+                metrics_df[col] = (
+                    metrics_df[col] * 100
+                ).round(1)
+
+        st.dataframe(
+            metrics_df,
+            use_container_width=True,
+            hide_index=True,
+        )
+
+        # ---------------- MODEL SUMMARY ----------------
+
+        st.markdown(
+            '<div class="section-heading">📘 Model Training Summary</div>',
+            unsafe_allow_html=True,
+        )
+
+        summary_col1, summary_col2, summary_col3 = st.columns(3)
+
+        with summary_col1:
+            create_kpi(
+                "Training Method",
+                "Random Forest",
+                "Supervised classification",
+            )
+
+        with summary_col2:
+            create_kpi(
+                "Training Split",
+                "80 / 20",
+                "80% training, 20% testing",
+            )
+
+        with summary_col3:
+            create_kpi(
+                "Support Criterion",
+                "< 58",
+                "Composite academic score",
+            )
+
+        # ---------------- FEATURE IMPORTANCE ----------------
+
+        st.markdown(
+            '<div class="section-heading">'
+            "📊 Academic Indicator Importance"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
+        importance_display = feature_importance.copy()
+
+        importance_display["Indicator"] = (
+            importance_display["Indicator"]
+            .replace(
+                {
+                    "Attendance": "Attendance",
+                    "Final_Marks": "Final Marks",
+                    "Midterm_Marks": "Midterm Marks",
+                    "Quiz_Score": "Quiz Score",
+                }
+            )
+        )
+
+        fig_importance = px.bar(
+            importance_display,
+            x="Importance",
+            y="Indicator",
+            orientation="h",
+            text="Importance",
+            labels={
+                "Importance": "Importance",
+                "Indicator": "Academic Indicator",
+            },
+        )
+
+        fig_importance.update_traces(
+            texttemplate="%{text:.3f}",
+            textposition="outside",
+        )
+
+        fig_importance = apply_chart_format(
+            fig_importance,
+            "Feature Importance Ranking",
+        )
+
+        st.plotly_chart(
+            fig_importance,
+            use_container_width=True,
+        )
+
+        st.info(
+            "The Support Need Index is a model-generated probability "
+            "that a student belongs to the Learning Support Needed "
+            "category. It should be used as an educational support "
+            "indicator alongside teacher review and student context."
+        )
+
+
+# ============================================================
+# FOOTER
+# ============================================================
+
+st.markdown("---")
+
+st.markdown(
+    """
+    <div style="text-align:center; color:#000000;">
+        <b>Student Learning Support & Performance Dashboard</b><br>
+        Academic performance information should support teaching,
+        learning, revision, and student guidance.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
