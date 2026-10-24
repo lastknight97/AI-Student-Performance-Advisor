@@ -162,17 +162,26 @@ def load_and_prepare_academic_data():
     X["trend_numeric"] = trend_num
 
     total_score = (df["Attendance"] * 0.25) + (df["Final_Marks"] * 0.35) + (df["Midterm_Marks"] * 0.25) + (df["Quiz_Score"] * 0.15)
-    df["needs_support_target"] = np.where(total_score < 58, 1, 0)
+    
+    # Adjusted threshold to ensure both classes (0 and 1) exist in target variable
+    median_score = total_score.median()
+    df["needs_support_target"] = np.where(total_score < median_score, 1, 0)
     y = df["needs_support_target"]
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
     rf_model.fit(X_train, y_train)
-    rf_report = classification_report(y_test, rf_model.predict(X_test), output_dict=True)
+    rf_report = classification_report(y_test, rf_model.predict(X_test), output_dict=True, zero_division=0)
 
     df["Needs_Learning_Support"] = rf_model.predict(X)
-    df["Support_Need_Index"] = rf_model.predict_proba(X)[:, 1]
+    
+    # Safe probability extraction supporting single or multi-class classification outputs
+    probs = rf_model.predict_proba(X)
+    if probs.shape[1] > 1:
+        df["Support_Need_Index"] = probs[:, 1]
+    else:
+        df["Support_Need_Index"] = probs[:, 0]
 
     def calculate_grade(m):
         if m >= 80: return "A"
@@ -486,12 +495,21 @@ elif selected_section == "🤖 AI Model Verification":
     with m1:
         st.markdown("<div class='student-card'>", unsafe_allow_html=True)
         st.markdown("<h4 style='font-size: 15px; font-weight: 800; color: #000000;'>🌲 Machine Learning Classification Accuracy</h4>", unsafe_allow_html=True)
-        metrics_df = pd.DataFrame({
-            "Academic Category": ["Good Standing (0)", "Needs Learning Support (1)"],
-            "Precision Score": [rf_report['0']['precision'], rf_report['1']['precision']],
-            "Recall Score": [rf_report['0']['recall'], rf_report['1']['recall']],
-            "F1-Score": [rf_report['0']['f1-score'], rf_report['1']['f1-score']]
-        })
+        
+        # Safe metric extraction from classification report dictionary
+        classes_in_report = [k for k in rf_report.keys() if k not in ['accuracy', 'macro avg', 'weighted avg']]
+        if len(classes_in_report) > 0:
+            first_cls = classes_in_report[0]
+            second_cls = classes_in_report[1] if len(classes_in_report) > 1 else first_cls
+            metrics_df = pd.DataFrame({
+                "Academic Category": ["Good Standing (0)", "Needs Learning Support (1)"],
+                "Precision Score": [rf_report[first_cls]['precision'], rf_report[second_cls]['precision']],
+                "Recall Score": [rf_report[first_cls]['recall'], rf_report[second_cls]['recall']],
+                "F1-Score": [rf_report[first_cls]['f1-score'], rf_report[second_cls]['f1-score']]
+            })
+        else:
+            metrics_df = pd.DataFrame(columns=["Academic Category", "Precision Score", "Recall Score", "F1-Score"])
+            
         st.dataframe(metrics_df.style.format(precision=2), use_container_width=True, hide_index=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
