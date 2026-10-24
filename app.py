@@ -155,8 +155,8 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# 4 Top Summary KPI Cards
-kpi1, kpi2, k3, k4 = st.columns(4)
+# 4 Top Summary KPI Cards (CORRECTED VARIABLE NAMES HERE)
+kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 
 with kpi1:
     st.markdown(f"""
@@ -322,3 +322,4 @@ with row2_col3:
     )
     st.plotly_chart(fig_trend, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
+    
