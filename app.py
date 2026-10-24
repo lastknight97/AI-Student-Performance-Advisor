@@ -84,7 +84,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- DATA GENERATION / INGESTION ---
+# --- DATA INGESTION & COLUMN MAPPING ---
 @st.cache_resource
 def load_dashboard_data():
     excel_path = "data/Subject_Analytics_Dataset_200_Students.xlsx"
@@ -97,7 +97,7 @@ def load_dashboard_data():
         df = pd.DataFrame({
             "Student_ID": [f"STU{str(i).zfill(3)}" for i in range(1, n + 1)],
             "Student_Name": [f"Student {i}" for i in range(1, n + 1)],
-            "Year_Level": np.random.choice(["Year 1", "Year 2", "Year 3", "Year 4"], size=n, p=[0.25, 0.25, 0.25, 0.25]),
+            "Semester": np.random.choice(["Semester 1", "Semester 2", "Semester 3", "Semester 4"], size=n),
             "Gender": np.random.choice(["Female", "Male"], size=n, p=[0.5, 0.5]),
             "Department": np.random.choice(["Language", "STEM", "Humanities", "Physical Ed"], size=n),
             "Nationality": np.random.choice(["Indian", "Korean", "Italian", "Japanese", "French", "Canadian"], size=n),
@@ -105,9 +105,26 @@ def load_dashboard_data():
             "Attendance": np.random.uniform(60, 100, size=n),
             "Final_Marks": np.random.uniform(40, 98, size=n),
             "Midterm_Marks": np.random.uniform(35, 95, size=n),
-            "Quiz_Score": np.random.uniform(50, 100, size=n),
-            "Assignment_Score": np.random.uniform(50, 100, size=n)
         })
+
+    # Ensure required columns exist safely
+    if "Semester" not in df.columns and "Year_Level" in df.columns:
+        df["Semester"] = df["Year_Level"]
+    elif "Semester" not in df.columns:
+        df["Semester"] = "Semester 1"
+
+    if "Gender" not in df.columns:
+        df["Gender"] = "Female"
+
+    if "Department" not in df.columns:
+        df["Department"] = "STEM"
+
+    if "Nationality" not in df.columns:
+        df["Nationality"] = "Indian"
+
+    if "Student_Name" not in df.columns:
+        df["Student_Name"] = df["Student_ID"]
+
     return df
 
 df = load_dashboard_data()
@@ -127,7 +144,7 @@ with st.sidebar:
     st.markdown("---")
     record_id = st.selectbox("RecordID", options=["All"] + sorted(df["Student_ID"].unique().tolist()))
     st.markdown("---")
-    gender_filter = st.radio("Gender", options=["All", "Female", "Male"], horizontal=False)
+    gender_filter = st.radio("Gender", options=["All"] + sorted(df["Gender"].unique().tolist()), horizontal=False)
     
     st.markdown("<br><br>", unsafe_allow_html=True)
     sb_col1, sb_col2 = st.columns(2)
@@ -155,7 +172,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# 4 Top Summary KPI Cards (CORRECTED VARIABLE NAMES HERE)
+# 4 Top Summary KPI Cards
 kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 
 with kpi1:
@@ -210,11 +227,11 @@ row1_col1, row1_col2, row1_col3, row1_col4 = st.columns([1.3, 1, 1, 1])
 
 with row1_col1:
     st.markdown("<div class='dashboard-card'>", unsafe_allow_html=True)
-    st.markdown("<p style='font-size: 12px; color: #718096; font-weight: 700; margin-bottom: 0;'>Pass % by Year Level</p>", unsafe_allow_html=True)
+    st.markdown("<p style='font-size: 12px; color: #718096; font-weight: 700; margin-bottom: 0;'>Pass % by Semester</p>", unsafe_allow_html=True)
     
-    year_pass = filtered_df.groupby("Year_Level")["Final_Marks"].apply(lambda x: (x >= 50).mean() * 100).reset_index(name="Pass_Rate")
+    sem_pass = filtered_df.groupby("Semester")["Final_Marks"].apply(lambda x: (x >= 50).mean() * 100).reset_index(name="Pass_Rate")
     fig_donut = px.pie(
-        year_pass, names="Year_Level", values="Pass_Rate", hole=0.65,
+        sem_pass, names="Semester", values="Pass_Rate", hole=0.65,
         color_discrete_sequence=["#4c51bf", "#6366f1", "#818cf8", "#c7d2fe"]
     )
     fig_donut.update_layout(
@@ -322,4 +339,3 @@ with row2_col3:
     )
     st.plotly_chart(fig_trend, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
-    
