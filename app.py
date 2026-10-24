@@ -20,26 +20,19 @@ st.set_page_config(
 # --- HIGH-CONTRAST LIGHT ACADEMIC THEME (BLACK TEXT) ---
 st.markdown("""
     <style>
-        /* Global Text & Page Theme */
         .stApp {
             background-color: #f8fafc !important;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             color: #000000 !important;
         }
-
-        /* Force black text across standard inputs and paragraphs */
         p, span, label, h1, h2, h3, h4, h5, h6, div {
             color: #000000 !important;
         }
-
-        /* Sidebar Styling */
         section[data-testid="stSidebar"] {
             background-color: #ffffff !important;
             border-right: 2px solid #cbd5e1;
             padding-top: 16px;
         }
-
-        /* Card Container Styling */
         .student-card {
             background-color: #ffffff;
             border: 1.5px solid #cbd5e1;
@@ -48,8 +41,6 @@ st.markdown("""
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
             margin-bottom: 20px;
         }
-
-        /* KPI Cards with High Contrast Black Text */
         .kpi-card {
             background: #ffffff;
             border: 1.5px solid #cbd5e1;
@@ -71,8 +62,6 @@ st.markdown("""
             color: #000000 !important;
             margin-top: 4px;
         }
-
-        /* Educational Learning Support Boxes */
         .study-plan-card {
             background-color: #fffbe3;
             border: 1.5px solid #fde047;
@@ -92,8 +81,6 @@ st.markdown("""
             margin-bottom: 6px;
             font-weight: 500;
         }
-
-        /* Status Badges */
         .badge-stable {
             background-color: #dcfce7;
             color: #166534 !important;
@@ -112,8 +99,6 @@ st.markdown("""
             font-size: 12px;
             font-weight: 700;
         }
-
-        /* Streamlit Dataframe High Contrast Light Table Override */
         .stDataFrame {
             background-color: #ffffff !important;
             border: 1.5px solid #cbd5e1 !important;
@@ -122,22 +107,20 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- DATA INGESTION & EDUCATIONAL ML MODEL ---
+# --- DATA INGESTION & PRIMARY KEY CONSOLIDATION ---
 @st.cache_resource
 def load_and_prepare_academic_data():
     excel_path = "data/Subject_Analytics_Dataset_200_Students.xlsx"
     
     if not os.path.exists(excel_path):
-        # Synthetic Academic Data Fallback
         np.random.seed(42)
         n = 200
-        df = pd.DataFrame({
+        raw_df = pd.DataFrame({
             "Student_ID": [f"S{str(i).zfill(3)}" for i in range(1, n + 1)],
             "Student_Name": [f"Student {i}" for i in range(1, n + 1)],
             "Semester": np.random.choice(["Semester 1", "Semester 2", "Semester 3", "Semester 4"], size=n),
             "Gender": np.random.choice(["Female", "Male"], size=n, p=[0.5, 0.5]),
             "Department": np.random.choice(["CSE", "ECE", "EEE", "Mechanical"], size=n),
-            "Subject": np.random.choice(["Mathematics", "Physics", "Chemistry", "Programming", "Database Systems"], size=n),
             "Attendance": np.random.uniform(60, 100, size=n),
             "Final_Marks": np.random.uniform(40, 98, size=n),
             "Midterm_Marks": np.random.uniform(35, 95, size=n),
@@ -145,12 +128,26 @@ def load_and_prepare_academic_data():
             "Assignment_Score": np.random.uniform(50, 100, size=n)
         })
     else:
-        df = pd.read_excel(excel_path)
+        raw_df = pd.read_excel(excel_path)
 
-    # Clean Strings
-    df.columns = df.columns.str.strip()
-    for col in df.select_dtypes(include=['object']).columns:
-        df[col] = df[col].astype(str).str.strip()
+    raw_df.columns = raw_df.columns.str.strip()
+    for col in raw_df.select_dtypes(include=['object']).columns:
+        raw_df[col] = raw_df[col].astype(str).str.strip()
+
+    # Treat Student_ID as Primary Key by aggregating subject records per student unique ID
+    agg_dict = {
+        "Student_Name": "first",
+        "Semester": "first",
+        "Gender": "first",
+        "Department": "first",
+        "Attendance": "mean",
+        "Final_Marks": "mean",
+        "Midterm_Marks": "mean",
+        "Quiz_Score": "mean",
+        "Assignment_Score": "mean"
+    }
+    present_cols = {k: v for k, v in agg_dict.items() if k in raw_df.columns}
+    df = raw_df.groupby("Student_ID").agg(present_cols).reset_index()
 
     if "performance_trend" not in df.columns:
         df["performance_trend"] = np.where(df["Final_Marks"] >= df["Midterm_Marks"], "Improving/Stable", "Needs Attention")
@@ -164,7 +161,6 @@ def load_and_prepare_academic_data():
     X = df[feature_cols].copy()
     X["trend_numeric"] = trend_num
 
-    # Composite Student Academic Score Calculation
     total_score = (df["Attendance"] * 0.25) + (df["Final_Marks"] * 0.35) + (df["Midterm_Marks"] * 0.25) + (df["Quiz_Score"] * 0.15)
     df["needs_support_target"] = np.where(total_score < 58, 1, 0)
     y = df["needs_support_target"]
@@ -207,7 +203,6 @@ with st.sidebar:
         ["📊 Student Overview Dashboard", "👤 Student Profile Study", "🏫 Class Learning Progress", "🤖 AI Model Verification"]
     )
 
-# Filter Data
 active_df = df.copy()
 if selected_dept != "All Departments":
     active_df = active_df[active_df["Department"] == selected_dept]
@@ -222,7 +217,6 @@ if selected_section == "📊 Student Overview Dashboard":
     st.markdown("### 📊 Student Learning Overview Dashboard")
     st.markdown("A complete summary of enrolled students, marks, attendance rates, and top performers.")
     
-    # Overview Top KPIs
     o1, o2, o3, o4 = st.columns(4)
     with o1:
         st.markdown(f"""
@@ -255,17 +249,16 @@ if selected_section == "📊 Student Overview Dashboard":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Top Performing Students Ranking
     st.markdown("<div class='student-card'>", unsafe_allow_html=True)
     st.markdown("<h4 style='font-size: 16px; font-weight: 800; color: #000000;'>🏆 Top Academic Performers</h4>", unsafe_allow_html=True)
     
-    top_students = active_df.groupby(["Student_ID", "Student_Name"])["Final_Marks"].mean().reset_index().sort_values(by="Final_Marks", ascending=False).head(3)
+    top_students = active_df.sort_values(by="Final_Marks", ascending=False).head(3)
     
     r1, r2, r3 = st.columns(3)
     rank_cols = [r1, r2, r3]
     rank_labels = ["🥇 Rank 1", "🥈 Rank 2", "🥉 Rank 3"]
     
-    for idx, row in top_students.iterrows():
+    for idx, (_, row) in enumerate(top_students.iterrows()):
         if idx < 3:
             with rank_cols[idx]:
                 st.markdown(f"""
@@ -278,7 +271,6 @@ if selected_section == "📊 Student Overview Dashboard":
                 """, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # Department Score Distribution & Attendance Trend
     c_left, c_right = st.columns(2)
     with c_left:
         st.markdown("<div class='student-card'>", unsafe_allow_html=True)
@@ -308,7 +300,7 @@ if selected_section == "📊 Student Overview Dashboard":
 
 
 # ==============================================================================
-# VIEW 2: STUDENT PROFILE STUDY (INDIVIDUAL DEEP DIVE WITH CLEAR MARKINGS)
+# VIEW 2: STUDENT PROFILE STUDY
 # ==============================================================================
 elif selected_section == "👤 Student Profile Study":
     st.markdown("### 👤 Student Profile & Study Guidance")
@@ -320,17 +312,16 @@ elif selected_section == "👤 Student Profile Study":
     selected_stu_label = st.selectbox("Select Student Record", options=student_opts["Label"].tolist())
     selected_stu_id = selected_stu_label.split(" — ")[0]
     
-    stu_df = active_df[active_df["Student_ID"] == selected_stu_id]
-    stu_name = stu_df["Student_Name"].iloc[0]
-    stu_dept = stu_df["Department"].iloc[0]
-    stu_sem = stu_df["Semester"].iloc[0] if "Semester" in stu_df.columns else "Semester 1"
+    stu_row = active_df[active_df["Student_ID"] == selected_stu_id].iloc[0]
+    stu_name = stu_row["Student_Name"]
+    stu_dept = stu_row["Department"]
+    stu_sem = stu_row["Semester"] if "Semester" in stu_row else "Semester 1"
     
-    avg_final = stu_df["Final_Marks"].mean()
-    avg_att = stu_df["Attendance"].mean()
-    support_index = stu_df["Support_Need_Index"].mean()
+    avg_final = stu_row["Final_Marks"]
+    avg_att = stu_row["Attendance"]
+    support_index = stu_row["Support_Need_Index"]
     needs_help = support_index >= 0.5
 
-    # 4 High Contrast Top Cards
     k1, k2, k3, k4 = st.columns(4)
     with k1:
         st.markdown(f"""
@@ -374,93 +365,65 @@ elif selected_section == "👤 Student Profile Study":
         st.markdown("<div class='student-card'>", unsafe_allow_html=True)
         st.markdown("<h4 style='font-size: 15px; font-weight: 800; color: #000000;'>📖 Personalized Study Improvement Steps</h4>", unsafe_allow_html=True)
         
-        flagged_subjects = stu_df[stu_df["Support_Need_Index"] >= 0.5]
-        
-        if len(flagged_subjects) > 0:
-            for _, row in flagged_subjects.iterrows():
-                subj = row["Subject"]
-                q_score = row["Quiz_Score"]
-                m_score = row["Midterm_Marks"]
-                att_rate = row["Attendance"]
-                
-                steps = []
-                if q_score < 60:
-                    steps.append(f"Quiz mark is low ({q_score:.0f}/100). Review topic notes and practice weekly quiz questions.")
-                if m_score < 60:
-                    steps.append(f"Midterm mark is low ({m_score:.0f}/100). Attend teacher office hours for extra concept explanations.")
-                if att_rate < 75:
-                    steps.append(f"Class attendance is low ({att_rate:.1f}%). Ensure regular attendance to avoid missing key lessons.")
-                steps.append("Complete assigned revision worksheets before final examinations.")
-                
-                rendered_steps = "".join([f"<div class='study-step'>📌 {step}</div>" for step in steps])
-                
-                st.markdown(f"""
-                    <div class='study-plan-card'>
-                        <div class='study-plan-title'>⚠️ Subject Needing Attention: {subj} (Need Score: {row['Support_Need_Index']:.2f})</div>
-                        {rendered_steps}
-                    </div>
-                """, unsafe_allow_html=True)
+        if needs_help:
+            steps = []
+            if stu_row["Quiz_Score"] < 60:
+                steps.append(f"Quiz mark is low ({stu_row['Quiz_Score']:.0f}/100). Review topic notes and practice weekly quiz questions.")
+            if stu_row["Midterm_Marks"] < 60:
+                steps.append(f"Midterm mark is low ({stu_row['Midterm_Marks']:.0f}/100). Attend teacher office hours for extra concept explanations.")
+            if stu_row["Attendance"] < 75:
+                steps.append(f"Class attendance is low ({stu_row['Attendance']:.1f}%). Ensure regular attendance to avoid missing key lessons.")
+            steps.append("Complete assigned revision worksheets before final examinations.")
+            
+            rendered_steps = "".join([f"<div class='study-step'>📌 {step}</div>" for step in steps])
+            st.markdown(f"""
+                <div class='study-plan-card'>
+                    <div class='study-plan-title'>⚠️ Focus Areas Needed (Support Index: {support_index:.2f})</div>
+                    {rendered_steps}
+                </div>
+            """, unsafe_allow_html=True)
         else:
             st.markdown("""
                 <div style='background-color: #dcfce7; border: 1.5px solid #86efac; border-radius: 8px; padding: 16px;'>
                     <div style='font-weight: 800; color: #166534; font-size: 14px;'>✅ Strong Academic Performance</div>
-                    <div style='font-size: 13px; color: #1e293b; margin-top: 4px;'>All subject marks meet or exceed standard requirements. Maintain current study habits!</div>
+                    <div style='font-size: 13px; color: #1e293b; margin-top: 4px;'>Overall performance meets or exceeds standard requirements. Maintain current study habits!</div>
                 </div>
             """, unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     with col_right:
         st.markdown("<div class='student-card'>", unsafe_allow_html=True)
-        st.markdown("<h4 style='font-size: 15px; font-weight: 800; color: #000000;'>🕸️ Subject Mark Comparison (Clear Markings)</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='font-size: 15px; font-weight: 800; color: #000000;'>🕸️ Performance Metrics Bar Overview</h4>", unsafe_allow_html=True)
         
-        # High Contrast Plotly Radar Chart with Solid Black Text & Markings
-        fig_radar = go.Figure()
-        fig_radar.add_trace(go.Scatterpolar(
-            r=stu_df["Final_Marks"].tolist(),
-            theta=stu_df["Subject"].tolist(),
-            fill='toself',
-            name='Final Mark',
-            line=dict(color='#2563eb', width=2),
-            fillcolor='rgba(37, 99, 235, 0.25)'
-        ))
-        fig_radar.add_trace(go.Scatterpolar(
-            r=stu_df["Midterm_Marks"].tolist(),
-            theta=stu_df["Subject"].tolist(),
-            fill='toself',
-            name='Midterm Mark',
-            line=dict(color='#9333ea', width=2),
-            fillcolor='rgba(147, 51, 234, 0.15)'
-        ))
-        fig_radar.update_layout(
-            polar=dict(
-                radialaxis=dict(visible=True, range=[0, 100], gridcolor='#94a3b8', tickfont=dict(color='#000000', size=11, weight="bold")),
-                angularaxis=dict(gridcolor='#94a3b8', tickfont=dict(color='#000000', size=12, weight="bold"))
-            ),
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            height=280, margin=dict(t=20, b=20, l=20, r=20),
-            legend=dict(orientation="h", yanchor="bottom", y=-0.25, xanchor="center", x=0.5, font=dict(color='#000000', size=12))
+        metrics_bar_df = pd.DataFrame({
+            "Metric": ["Attendance", "Quiz Score", "Assignment", "Midterm Mark", "Final Mark"],
+            "Score": [stu_row["Attendance"], stu_row["Quiz_Score"], stu_row["Assignment_Score"], stu_row["Midterm_Marks"], stu_row["Final_Marks"]]
+        })
+        fig_bar_ind = px.bar(metrics_bar_df, x="Metric", y="Score", text_auto='.1f', color_discrete_sequence=["#2563eb"])
+        fig_bar_ind.update_traces(textfont=dict(color="#000000", size=12))
+        fig_bar_ind.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", height=260,
+            xaxis=dict(tickfont=dict(color="#000000", size=12)),
+            yaxis=dict(tickfont=dict(color="#000000", size=12), range=[0, 100], gridcolor="#cbd5e1")
         )
-        st.plotly_chart(fig_radar, use_container_width=True)
+        st.plotly_chart(fig_bar_ind, use_container_width=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Detailed High Contrast Subject Marks Table
     st.markdown("<div class='student-card'>", unsafe_allow_html=True)
-    st.markdown("<h4 style='font-size: 15px; font-weight: 800; color: #000000;'>📖 Subject Marks Summary Table</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 style='font-size: 15px; font-weight: 800; color: #000000;'>📖 Student Record Summary Table</h4>", unsafe_allow_html=True)
     
-    table_df = stu_df[["Subject", "Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks", "Grade", "Support_Need_Index"]].copy()
-    table_df["Status"] = np.where(table_df["Support_Need_Index"] >= 0.5, "⚠️ Needs Help", "✅ Stable")
-    table_df = table_df[["Subject", "Attendance", "Quiz_Score", "Assignment_Score", "Midterm_Marks", "Final_Marks", "Grade", "Status"]]
-    table_df.columns = ["Subject Name", "Attendance %", "Quiz Mark", "Assignment Mark", "Midterm Mark", "Final Mark", "Letter Grade", "Learning Status"]
-    
-    # Styled Table with Clear Dark Text
-    st.dataframe(
-        table_df.style.format({
-            "Attendance %": "{:.1f}", "Quiz Mark": "{:.0f}", "Assignment Mark": "{:.0f}",
-            "Midterm Mark": "{:.0f}", "Final Mark": "{:.0f}"
-        }),
-        use_container_width=True,
-        hide_index=True
-    )
+    single_record_df = pd.DataFrame([{
+        "Student ID": stu_row["Student_ID"],
+        "Name": stu_row["Student_Name"],
+        "Attendance %": f"{stu_row['Attendance']:.1f}",
+        "Quiz Mark": f"{stu_row['Quiz_Score']:.0f}",
+        "Assignment Mark": f"{stu_row['Assignment_Score']:.0f}",
+        "Midterm Mark": f"{stu_row['Midterm_Marks']:.0f}",
+        "Final Mark": f"{stu_row['Final_Marks']:.0f}",
+        "Letter Grade": stu_row["Grade"],
+        "Learning Status": "⚠️ Needs Help" if needs_help else "✅ Stable"
+    }])
+    st.dataframe(single_record_df, use_container_width=True, hide_index=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 
@@ -469,11 +432,11 @@ elif selected_section == "👤 Student Profile Study":
 # ==============================================================================
 elif selected_section == "🏫 Class Learning Progress":
     st.markdown("### 🏫 Class Learning Progress & Score Trends")
-    st.markdown("Classwide performance summaries across departments and subjects.")
+    st.markdown("Classwide performance summaries across departments.")
     
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown(f"<div class='kpi-card'><div class='kpi-title'>Total Active Class Group</div><div class='kpi-val'>{active_df['Student_ID'].nunique()}</div></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='kpi-card'><div class='kpi-title'>Total Active Students</div><div class='kpi-val'>{active_df['Student_ID'].nunique()}</div></div>", unsafe_allow_html=True)
     with c2:
         st.markdown(f"<div class='kpi-card'><div class='kpi-title'>Class Average Final Mark</div><div class='kpi-val'>{active_df['Final_Marks'].mean():.1f}</div></div>", unsafe_allow_html=True)
     with c3:
