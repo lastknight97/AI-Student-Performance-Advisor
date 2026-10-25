@@ -1,12 +1,20 @@
-# app.py
 # ============================================================
-# BITS Pilani
-# AI-Based Student Performance Advisor and Visualization System
+# BITS PILANI
+# AI-BASED STUDENT PERFORMANCE ADVISOR
+#
+# app.py
+#
+# DATA SOURCE:
+# data/Subject_Analytics_Dataset_200_Students.xlsx
+#
+# IMPORTANT:
+# No synthetic data is generated.
+# The uploaded/reference dashboard image is used only for
+# visual/layout inspiration.
 # ============================================================
 
 import os
 import warnings
-from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -29,11 +37,11 @@ warnings.filterwarnings("ignore")
 
 
 # ============================================================
-# PAGE CONFIGURATION
+# PAGE CONFIG
 # ============================================================
 
 st.set_page_config(
-    page_title="BITS Pilani | AI Student Performance Advisor",
+    page_title="BITS Pilani | Student Performance Advisor",
     page_icon="🎓",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -41,7 +49,7 @@ st.set_page_config(
 
 
 # ============================================================
-# CONSTANTS
+# APPLICATION CONSTANTS
 # ============================================================
 
 DATA_PATH = "data/Subject_Analytics_Dataset_200_Students.xlsx"
@@ -58,14 +66,6 @@ FEATURE_COLUMNS = [
 
 TARGET_COLUMN = "risk"
 
-SUBJECTS = [
-    "Mathematics",
-    "Statistics",
-    "Data Structures",
-    "Machine Learning",
-    "Database Systems",
-]
-
 RISK_LABELS = {
     0: "No Immediate Risk",
     1: "Requires Academic Attention",
@@ -73,157 +73,328 @@ RISK_LABELS = {
 
 
 # ============================================================
-# CUSTOM CSS
+# HIGH-CONTRAST ACADEMIC DESIGN
 # ============================================================
 
 st.markdown(
     """
     <style>
 
+    /* ========================================================
+       GLOBAL
+       ======================================================== */
+
     .stApp {
-        background-color: #0b1220;
-        color: #ffffff;
+        background: #f4f7fb;
     }
 
-    html, body, [class*="css"] {
-        color: #ffffff !important;
+    .main {
+        background: #f4f7fb;
     }
+
+    [data-testid="stAppViewContainer"] {
+        background: #f4f7fb;
+    }
+
+    * {
+        font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    }
+
+    h1, h2, h3, h4, h5, h6,
+    p, label, span, div {
+        color: #000000;
+    }
+
+    /* ========================================================
+       SIDEBAR
+       ======================================================== */
 
     section[data-testid="stSidebar"] {
-        background-color: #111827;
-        border-right: 1px solid #334155;
+        background: #ffffff;
+        border-right: 1px solid #cbd5e1;
     }
 
     section[data-testid="stSidebar"] * {
-        color: #ffffff !important;
+        color: #000000 !important;
     }
 
-    h1, h2, h3, h4, h5, h6 {
-        color: #ffffff !important;
-        font-weight: 800 !important;
+    .sidebar-brand {
+        padding: 8px 4px 20px 4px;
+        border-bottom: 1px solid #e2e8f0;
+        margin-bottom: 20px;
     }
 
-    p, span, label {
-        color: #ffffff;
-    }
-
-    .main-title {
-        font-size: 2.35rem;
+    .sidebar-brand-title {
+        font-size: 20px;
         font-weight: 900;
-        color: #ffffff !important;
-        margin-bottom: 0.15rem;
+        color: #000000;
     }
 
-    .subtitle {
-        color: #cbd5e1 !important;
-        font-size: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .metric-card {
-        background: #111827;
-        border: 1px solid #475569;
-        border-radius: 14px;
-        padding: 20px;
-        min-height: 135px;
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.30);
-    }
-
-    .metric-label {
-        color: #cbd5e1 !important;
-        font-size: 0.88rem;
-        font-weight: 700;
-    }
-
-    .metric-value {
-        color: #ffffff !important;
-        font-size: 2rem;
-        font-weight: 900;
-        margin-top: 8px;
-    }
-
-    .metric-help {
-        color: #94a3b8 !important;
-        font-size: 0.8rem;
-        margin-top: 5px;
-    }
-
-    .risk-high {
-        background: #7f1d1d;
-        border: 2px solid #fca5a5;
-        border-radius: 12px;
-        padding: 18px 22px;
-        margin: 15px 0;
-    }
-
-    .risk-low {
-        background: #14532d;
-        border: 2px solid #86efac;
-        border-radius: 12px;
-        padding: 18px 22px;
-        margin: 15px 0;
-    }
-
-    .recommendation-card {
-        background: #111827;
-        border: 1px solid #475569;
-        border-left: 5px solid #38bdf8;
-        border-radius: 10px;
-        padding: 15px 18px;
-        margin: 9px 0;
-    }
-
-    .recommendation-title {
-        color: #ffffff !important;
-        font-weight: 800;
-    }
-
-    .recommendation-body {
-        color: #e2e8f0 !important;
+    .sidebar-brand-subtitle {
+        font-size: 12px;
+        color: #475569;
         margin-top: 4px;
     }
 
-    .qa-answer {
-        background: #1e293b;
-        border: 1px solid #475569;
-        border-radius: 10px;
-        padding: 14px;
-        color: #ffffff !important;
+    /* ========================================================
+       HEADER
+       ======================================================== */
+
+    .dashboard-header {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 14px;
+        padding: 20px 24px;
+        margin-bottom: 16px;
+        box-shadow: 0 3px 12px rgba(15, 23, 42, 0.07);
+    }
+
+    .dashboard-title {
+        font-size: 28px;
+        font-weight: 900;
+        color: #000000 !important;
+        margin: 0;
+    }
+
+    .dashboard-subtitle {
+        font-size: 13px;
+        color: #475569 !important;
+        margin-top: 5px;
+    }
+
+    .data-status {
+        text-align: right;
+        font-size: 12px;
+        color: #475569 !important;
+        padding-top: 5px;
+    }
+
+    /* ========================================================
+       KPI CARDS
+       ======================================================== */
+
+    .kpi-card {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        min-height: 120px;
+        padding: 17px;
+        box-shadow: 0 3px 12px rgba(15, 23, 42, 0.07);
+    }
+
+    .kpi-title {
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #475569 !important;
+    }
+
+    .kpi-value {
+        font-size: 26px;
+        font-weight: 900;
+        color: #000000 !important;
         margin-top: 8px;
     }
 
-    [data-testid="stDataFrame"] {
-        border: 1px solid #475569;
-        border-radius: 8px;
+    .kpi-description {
+        font-size: 11px;
+        color: #64748b !important;
+        margin-top: 4px;
     }
 
+    /* ========================================================
+       SECTION / CARD
+       ======================================================== */
+
+    .section-card {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        padding: 17px;
+        box-shadow: 0 3px 12px rgba(15, 23, 42, 0.06);
+        margin-bottom: 15px;
+    }
+
+    .section-title {
+        font-size: 15px;
+        font-weight: 900;
+        color: #000000 !important;
+        margin-bottom: 4px;
+    }
+
+    .section-description {
+        font-size: 11px;
+        color: #64748b !important;
+        margin-bottom: 10px;
+    }
+
+    /* ========================================================
+       STATUS
+       ======================================================== */
+
+    .status-good {
+        background: #dcfce7;
+        border: 1px solid #86efac;
+        border-radius: 9px;
+        padding: 12px 16px;
+        font-weight: 800;
+        color: #14532d !important;
+        margin-bottom: 15px;
+    }
+
+    .status-warning {
+        background: #fef3c7;
+        border: 1px solid #fbbf24;
+        border-radius: 9px;
+        padding: 12px 16px;
+        font-weight: 800;
+        color: #78350f !important;
+        margin-bottom: 15px;
+    }
+
+    .status-danger {
+        background: #fee2e2;
+        border: 1px solid #fca5a5;
+        border-radius: 9px;
+        padding: 12px 16px;
+        font-weight: 800;
+        color: #7f1d1d !important;
+        margin-bottom: 15px;
+    }
+
+    /* ========================================================
+       PROFILE
+       ======================================================== */
+
+    .profile-card {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        padding: 18px;
+        box-shadow: 0 3px 12px rgba(15, 23, 42, 0.06);
+    }
+
+    .profile-name {
+        font-size: 21px;
+        font-weight: 900;
+    }
+
+    .profile-id {
+        font-size: 12px;
+        color: #64748b !important;
+        margin-top: 3px;
+    }
+
+    .profile-stat {
+        border-left: 3px solid #0f172a;
+        padding-left: 10px;
+        margin-top: 12px;
+    }
+
+    .profile-stat-label {
+        font-size: 10px;
+        color: #64748b !important;
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+
+    .profile-stat-value {
+        font-size: 17px;
+        font-weight: 900;
+    }
+
+    /* ========================================================
+       RECOMMENDATION
+       ======================================================== */
+
+    .recommendation {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-left: 4px solid #0f172a;
+        border-radius: 9px;
+        padding: 14px;
+        margin-bottom: 9px;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+    }
+
+    .recommendation-heading {
+        font-size: 12px;
+        font-weight: 900;
+        color: #000000 !important;
+    }
+
+    .recommendation-text {
+        font-size: 12px;
+        color: #334155 !important;
+        margin-top: 5px;
+        line-height: 1.5;
+    }
+
+    /* ========================================================
+       CHAT
+       ======================================================== */
+
+    .answer-card {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 8px;
+        color: #000000 !important;
+    }
+
+    /* ========================================================
+       STREAMLIT ELEMENTS
+       ======================================================== */
+
     div[data-baseweb="select"] {
-        background-color: #ffffff !important;
+        background: #ffffff !important;
     }
 
     div[data-baseweb="select"] * {
         color: #000000 !important;
     }
 
-    .stButton > button {
+    .stSelectbox label,
+    .stMultiSelect label,
+    .stRadio label,
+    .stTextInput label {
         color: #000000 !important;
-        background-color: #ffffff !important;
-        border: 1px solid #94a3b8;
-        font-weight: 800;
+        font-weight: 700 !important;
+    }
+
+    button {
+        color: #000000 !important;
+    }
+
+    [data-testid="stMetricValue"] {
+        color: #000000 !important;
+    }
+
+    [data-testid="stMetricLabel"] {
+        color: #475569 !important;
+    }
+
+    /* ========================================================
+       TABLE
+       ======================================================== */
+
+    [data-testid="stDataFrame"] {
+        border: 1px solid #cbd5e1;
         border-radius: 8px;
+        overflow: hidden;
     }
 
-    button[data-baseweb="tab"] {
-        color: #cbd5e1 !important;
-        font-weight: 700;
-    }
+    /* ========================================================
+       FOOTER
+       ======================================================== */
 
-    button[data-baseweb="tab"][aria-selected="true"] {
-        color: #ffffff !important;
-    }
-
-    hr {
-        border-color: #334155 !important;
+    .footer {
+        text-align: center;
+        padding: 20px 0 5px 0;
+        color: #64748b !important;
+        font-size: 11px;
     }
 
     </style>
@@ -237,99 +408,84 @@ st.markdown(
 # ============================================================
 
 @st.cache_data
-def load_excel_dataset(path: str) -> pd.DataFrame:
-    """
-    Load the real BITS Pilani student dataset.
-
-    No synthetic data is generated.
-    """
+def load_dataset(path: str) -> pd.DataFrame:
+    """Load the real Excel dataset only."""
 
     if not os.path.exists(path):
         raise FileNotFoundError(
-            f"Dataset not found at: {path}"
+            f"Dataset not found: {path}"
         )
 
-    try:
-        df = pd.read_excel(
-            path,
-            engine="openpyxl",
-        )
-    except Exception as exc:
-        raise RuntimeError(
-            f"Unable to read Excel dataset: {exc}"
-        ) from exc
+    df = pd.read_excel(
+        path,
+        engine="openpyxl",
+    )
 
     if df.empty:
         raise ValueError(
-            "The Excel dataset is empty."
+            "The Excel dataset contains no records."
         )
 
-    # Normalize column names.
     df.columns = (
         df.columns
         .astype(str)
         .str.strip()
         .str.lower()
-        .str.replace(" ", "_")
-        .str.replace("-", "_")
+        .str.replace(" ", "_", regex=False)
+        .str.replace("-", "_", regex=False)
     )
 
     return df
 
 
 # ============================================================
-# COLUMN DETECTION
+# COLUMN MAPPING
 # ============================================================
 
-def find_column(
-    df: pd.DataFrame,
-    possible_names: List[str],
-    required: bool = True,
-) -> str:
+def detect_column(
+    df,
+    candidates,
+    required=True,
+):
+    """Find a column using common academic naming variants."""
 
-    for name in possible_names:
+    for candidate in candidates:
 
-        normalized = (
-            name.lower()
+        candidate = (
+            candidate
+            .lower()
             .strip()
             .replace(" ", "_")
             .replace("-", "_")
         )
 
-        if normalized in df.columns:
-            return normalized
+        if candidate in df.columns:
+            return candidate
 
     if required:
         raise ValueError(
-            "Required column not found. Expected one of: "
-            + ", ".join(possible_names)
+            "Could not find a required column. "
+            f"Accepted names: {candidates}"
         )
 
-    return ""
+    return None
 
 
-def standardize_dataset(
-    raw_df: pd.DataFrame,
-) -> pd.DataFrame:
-    """
-    Convert the actual Excel dataset into the internal
-    academic analytics schema.
+def prepare_dataset(raw: pd.DataFrame) -> pd.DataFrame:
+    """Convert the real Excel data into the application schema."""
 
-    The original dataset remains unchanged on disk.
-    """
-
-    df = raw_df.copy()
+    df = raw.copy()
 
     # --------------------------------------------------------
-    # Detect Student ID
+    # Student ID
     # --------------------------------------------------------
 
-    student_col = find_column(
+    student_col = detect_column(
         df,
         [
             "student_id",
             "studentid",
-            "student id",
+            "student",
             "id",
         ],
     )
@@ -341,16 +497,88 @@ def standardize_dataset(
     )
 
     # --------------------------------------------------------
-    # Detect Subject
+    # Student Name
     # --------------------------------------------------------
 
-    subject_col = find_column(
+    name_col = detect_column(
+        df,
+        [
+            "student_name",
+            "studentname",
+            "name",
+            "student_full_name",
+        ],
+        required=False,
+    )
+
+    if name_col:
+        df["student_name"] = (
+            df[name_col]
+            .astype(str)
+            .str.strip()
+        )
+    else:
+        df["student_name"] = df["student_id"]
+
+    # --------------------------------------------------------
+    # Department
+    # --------------------------------------------------------
+
+    department_col = detect_column(
+        df,
+        [
+            "department",
+            "dept",
+            "branch",
+            "program",
+        ],
+        required=False,
+    )
+
+    if department_col:
+        df["department"] = (
+            df[department_col]
+            .astype(str)
+            .str.strip()
+        )
+    else:
+        df["department"] = "Not Available"
+
+    # --------------------------------------------------------
+    # Semester
+    # --------------------------------------------------------
+
+    semester_col = detect_column(
+        df,
+        [
+            "semester",
+            "sem",
+            "term",
+        ],
+        required=False,
+    )
+
+    if semester_col:
+        df["semester"] = (
+            df[semester_col]
+            .astype(str)
+            .str.strip()
+        )
+    else:
+        df["semester"] = "Not Available"
+
+    # --------------------------------------------------------
+    # Subject
+    # --------------------------------------------------------
+
+    subject_col = detect_column(
         df,
         [
             "subject",
             "course",
             "module",
             "subject_name",
+            "course_name",
         ],
     )
 
@@ -361,10 +589,10 @@ def standardize_dataset(
     )
 
     # --------------------------------------------------------
-    # Detect academic columns
+    # Academic fields
     # --------------------------------------------------------
 
-    attendance_col = find_column(
+    attendance_col = detect_column(
         df,
         [
             "attendance",
@@ -374,7 +602,7 @@ def standardize_dataset(
         ],
     )
 
-    assignment_col = find_column(
+    assignment_col = detect_column(
         df,
         [
             "assignment_avg",
@@ -385,18 +613,18 @@ def standardize_dataset(
         ],
     )
 
-    quiz_col = find_column(
+    quiz_col = detect_column(
         df,
         [
             "quiz_avg",
             "quiz_average",
-            "quiz_score",
             "quiz_marks",
+            "quiz_score",
             "quiz",
         ],
     )
 
-    midsem_col = find_column(
+    midsem_col = detect_column(
         df,
         [
             "midsem_marks",
@@ -407,7 +635,7 @@ def standardize_dataset(
         ],
     )
 
-    final_col = find_column(
+    final_col = detect_column(
         df,
         [
             "comprehensive_marks",
@@ -417,10 +645,6 @@ def standardize_dataset(
             "final",
         ],
     )
-
-    # --------------------------------------------------------
-    # Convert numeric fields
-    # --------------------------------------------------------
 
     df["attendance"] = pd.to_numeric(
         df[attendance_col],
@@ -448,27 +672,16 @@ def standardize_dataset(
     )
 
     # --------------------------------------------------------
-    # Previous and recent averages
+    # Previous Average
     # --------------------------------------------------------
 
-    previous_col = find_column(
+    previous_col = detect_column(
         df,
         [
             "previous_avg",
             "previous_average",
             "previous_marks",
             "previous_score",
-        ],
-        required=False,
-    )
-
-    recent_col = find_column(
-        df,
-        [
-            "recent_avg",
-            "recent_average",
-            "recent_marks",
-            "recent_score",
         ],
         required=False,
     )
@@ -482,12 +695,27 @@ def standardize_dataset(
 
     else:
 
-        # If the source dataset does not have a previous-average
-        # field, use Midterm Marks as the closest historical
-        # academic measure.
+        # Use the available midsem score as the historical
+        # academic comparison when the source dataset does
+        # not explicitly provide previous_avg.
         df["previous_avg"] = df[
             "midsem_marks"
         ]
+
+    # --------------------------------------------------------
+    # Recent Average
+    # --------------------------------------------------------
+
+    recent_col = detect_column(
+        df,
+        [
+            "recent_avg",
+            "recent_average",
+            "recent_marks",
+            "recent_score",
+        ],
+        required=False,
+    )
 
     if recent_col:
 
@@ -498,8 +726,6 @@ def standardize_dataset(
 
     else:
 
-        # The final/comprehensive mark is the latest available
-        # assessment measure.
         df["recent_avg"] = df[
             "comprehensive_marks"
         ]
@@ -508,7 +734,7 @@ def standardize_dataset(
     # Performance Trend
     # --------------------------------------------------------
 
-    trend_col = find_column(
+    trend_col = detect_column(
         df,
         [
             "performance_trend",
@@ -527,30 +753,31 @@ def standardize_dataset(
             .str.title()
         )
 
-        # Normalize common variants.
         df["performance_trend"] = (
             df["performance_trend"]
             .replace(
                 {
-                    "Improving/stable": "Improving",
-                    "Improving / Stable": "Improving",
-                    "Needs Attention": "Declining",
                     "Declined": "Declining",
+                    "Decreasing": "Declining",
+                    "Increased": "Improving",
+                    "Increasing": "Improving",
+                    "Improving/stable": "Stable",
+                    "Improving / Stable": "Stable",
                 }
             )
         )
 
     else:
 
-        difference = (
+        change = (
             df["recent_avg"]
             - df["previous_avg"]
         )
 
         df["performance_trend"] = np.select(
             [
-                difference >= 5,
-                difference <= -5,
+                change >= 5,
+                change <= -5,
             ],
             [
                 "Improving",
@@ -563,7 +790,7 @@ def standardize_dataset(
     # Missed Assessments
     # --------------------------------------------------------
 
-    missed_col = find_column(
+    missed_col = detect_column(
         df,
         [
             "missed_assessments",
@@ -583,9 +810,8 @@ def standardize_dataset(
 
     else:
 
-        # Dataset does not contain this field.
-        # Attendance is used only to derive the requested
-        # academic support indicator.
+        # Derivation is used only if this field is absent from
+        # the real dataset.
         df["missed_assessments"] = np.where(
             df["attendance"] < 75,
             2,
@@ -600,19 +826,7 @@ def standardize_dataset(
     )
 
     # --------------------------------------------------------
-    # Primary-Key Aggregation
-    # --------------------------------------------------------
-    #
-    # The Excel dataset may contain one row per student/subject.
-    # Student-level analytics are calculated from subject records,
-    # while subject-level records remain available for detailed
-    # views.
-    #
-    # We do NOT reduce the subject dataset to one row per student
-    # here because the dashboard requires subject-level analysis.
-
-    # --------------------------------------------------------
-    # Calculate Risk
+    # Academic Risk Rule
     # --------------------------------------------------------
 
     df["risk"] = (
@@ -629,27 +843,45 @@ def standardize_dataset(
     )
 
     # --------------------------------------------------------
-    # Clean numeric values
+    # Grade
     # --------------------------------------------------------
 
-    numeric_columns = [
+    df["grade"] = np.select(
+        [
+            df["comprehensive_marks"] >= 80,
+            df["comprehensive_marks"] >= 70,
+            df["comprehensive_marks"] >= 60,
+            df["comprehensive_marks"] >= 50,
+        ],
+        [
+            "A",
+            "B",
+            "C",
+            "D",
+        ],
+        default="F",
+    )
+
+    # --------------------------------------------------------
+    # Clean data
+    # --------------------------------------------------------
+
+    required_numeric = [
         "attendance",
         "assignment_avg",
         "quiz_avg",
         "midsem_marks",
-        "comprehensive_marks",
         "previous_avg",
         "recent_avg",
+        "comprehensive_marks",
     ]
 
-    for column in numeric_columns:
-
-        df[column] = pd.to_numeric(
-            df[column],
+    for col in required_numeric:
+        df[col] = pd.to_numeric(
+            df[col],
             errors="coerce",
         )
 
-    # Remove rows where core academic information is unusable.
     df = df.dropna(
         subset=[
             "student_id",
@@ -666,21 +898,19 @@ def standardize_dataset(
 
 
 # ============================================================
-# MODEL TRAINING
+# ML TRAINING
 # ============================================================
 
 @st.cache_resource
-def train_models(
-    data: pd.DataFrame,
-):
-    """
-    Train Logistic Regression and Random Forest models
-    using the real Excel dataset.
-    """
+def train_models(data: pd.DataFrame):
 
-    X = data[FEATURE_COLUMNS].copy()
+    X = data[
+        FEATURE_COLUMNS
+    ].copy()
 
-    y = data[TARGET_COLUMN].astype(int)
+    y = data[
+        TARGET_COLUMN
+    ].astype(int)
 
     X = X.apply(
         pd.to_numeric,
@@ -692,11 +922,10 @@ def train_models(
     )
 
     if y.nunique() < 2:
-
         raise ValueError(
-            "The calculated academic risk target contains only "
-            "one class. Both risk classes are required for "
-            "classification training."
+            "The academic risk rule produced only one target "
+            "class. Both risk classes are required for ML "
+            "classification."
         )
 
     X_train, X_test, y_train, y_test = train_test_split(
@@ -711,17 +940,17 @@ def train_models(
     # Logistic Regression
     # --------------------------------------------------------
 
-    logistic_model = LogisticRegression(
+    logistic = LogisticRegression(
         random_state=42,
         max_iter=1000,
     )
 
-    logistic_model.fit(
+    logistic.fit(
         X_train,
         y_train,
     )
 
-    logistic_pred = logistic_model.predict(
+    logistic_pred = logistic.predict(
         X_test
     )
 
@@ -729,28 +958,25 @@ def train_models(
     # Random Forest
     # --------------------------------------------------------
 
-    random_forest_model = RandomForestClassifier(
+    forest = RandomForestClassifier(
         n_estimators=100,
         random_state=42,
     )
 
-    random_forest_model.fit(
+    forest.fit(
         X_train,
         y_train,
     )
 
-    rf_pred = random_forest_model.predict(
+    forest_pred = forest.predict(
         X_test
     )
 
     # --------------------------------------------------------
-    # Metrics
+    # Evaluation
     # --------------------------------------------------------
 
-    def metrics_for_model(
-        actual,
-        predicted,
-    ):
+    def evaluate(actual, predicted):
 
         return {
             "Accuracy": accuracy_score(
@@ -780,20 +1006,20 @@ def train_models(
         }
 
     metrics = {
-        "Logistic Regression": metrics_for_model(
+        "Logistic Regression": evaluate(
             y_test,
             logistic_pred,
         ),
-        "Random Forest": metrics_for_model(
+        "Random Forest": evaluate(
             y_test,
-            rf_pred,
+            forest_pred,
         ),
     }
 
-    feature_importance = pd.DataFrame(
+    importance = pd.DataFrame(
         {
             "Feature": FEATURE_COLUMNS,
-            "Importance": random_forest_model.feature_importances_,
+            "Importance": forest.feature_importances_,
         }
     ).sort_values(
         "Importance",
@@ -801,31 +1027,69 @@ def train_models(
     )
 
     return (
-        logistic_model,
-        random_forest_model,
+        logistic,
+        forest,
         metrics,
-        feature_importance,
+        importance,
     )
 
 
 # ============================================================
-# STUDENT ANALYTICS
+# STUDENT-LEVEL AGGREGATION
 # ============================================================
 
-def get_student_data(
-    data: pd.DataFrame,
-    student_id: str,
-) -> pd.DataFrame:
+def student_summary(data):
 
-    return data[
-        data["student_id"] == student_id
-    ].copy()
+    summary = (
+        data.groupby(
+            "student_id",
+            as_index=False,
+        )
+        .agg(
+            {
+                "student_name": "first",
+                "department": "first",
+                "semester": "first",
+                "attendance": "mean",
+                "assignment_avg": "mean",
+                "quiz_avg": "mean",
+                "midsem_marks": "mean",
+                "previous_avg": "mean",
+                "recent_avg": "mean",
+                "comprehensive_marks": "mean",
+                "missed_assessments": "sum",
+                "risk": "sum",
+            }
+        )
+    )
+
+    summary["grade"] = np.select(
+        [
+            summary["comprehensive_marks"] >= 80,
+            summary["comprehensive_marks"] >= 70,
+            summary["comprehensive_marks"] >= 60,
+            summary["comprehensive_marks"] >= 50,
+        ],
+        [
+            "A",
+            "B",
+            "C",
+            "D",
+        ],
+        default="F",
+    )
+
+    return summary
 
 
-def get_student_risk_probability(
-    student_df: pd.DataFrame,
+# ============================================================
+# MODEL RISK PREDICTION
+# ============================================================
+
+def predict_student_risk(
+    student_df,
     model,
-) -> float:
+):
 
     X = student_df[
         FEATURE_COLUMNS
@@ -840,36 +1104,36 @@ def get_student_risk_probability(
         X.median()
     )
 
-    probabilities = model.predict_proba(
+    probability = model.predict_proba(
         X
     )[:, 1]
 
-    return float(
-        probabilities.mean()
+    return (
+        int(probability.mean() >= 0.50),
+        float(probability.mean()),
     )
 
 
-def calculate_priority(
-    row: pd.Series,
-) -> int:
+# ============================================================
+# PRIORITY CALCULATION
+# ============================================================
+
+def priority_score(row):
 
     score = 0
 
     if row["recent_avg"] < 50:
         score += 4
-
     elif row["recent_avg"] < 60:
         score += 2
 
     if row["attendance"] < 70:
         score += 3
-
     elif row["attendance"] < 75:
         score += 1
 
     if row["missed_assessments"] >= 2:
         score += 3
-
     elif row["missed_assessments"] > 0:
         score += 1
 
@@ -883,12 +1147,10 @@ def calculate_priority(
 
 
 # ============================================================
-# RECOMMENDATION ENGINE
+# RECOMMENDATIONS
 # ============================================================
 
-def generate_recommendations(
-    student_df: pd.DataFrame,
-) -> List[Dict[str, str]]:
+def generate_recommendations(student_df):
 
     recommendations = []
 
@@ -901,89 +1163,70 @@ def generate_recommendations(
         trend = row["performance_trend"]
 
         # Rule 1
-        if (
-            recent < 50
-            and trend == "Declining"
-        ):
+        if recent < 50 and trend == "Declining":
 
             recommendations.append(
-                {
-                    "type": "Priority Action",
-                    "text": (
-                        f"Priority Action: {subject} requires "
-                        f"immediate attention due to declining "
-                        f"scores ({recent:.1f}%)."
-                    ),
-                }
+                (
+                    "Priority Action",
+                    f"{subject} requires immediate attention "
+                    f"due to declining scores ({recent:.1f}%).",
+                )
             )
 
         # Rule 2
         if attendance < 75:
 
             recommendations.append(
-                {
-                    "type": "Attendance Warning",
-                    "text": (
-                        f"Attendance Warning: Attendance in "
-                        f"{subject} is below threshold "
-                        f"({attendance:.1f}%). Attendance "
-                        f"improvement recommended."
-                    ),
-                }
+                (
+                    "Attendance Warning",
+                    f"Attendance in {subject} is below threshold "
+                    f"({attendance:.1f}%). Attendance improvement "
+                    f"recommended.",
+                )
             )
 
         # Rule 3
         if missed > 0:
 
             recommendations.append(
-                {
-                    "type": "Assessment Alert",
-                    "text": (
-                        f"Assessment Alert: {int(missed)} missed "
-                        f"assessment(s) detected. Coordinate "
-                        f"with instructor for retakes or "
-                        f"supplementary submission."
-                    ),
-                }
+                (
+                    "Assessment Alert",
+                    f"{int(missed)} missed assessment(s) detected "
+                    f"in {subject}. Coordinate with instructor for "
+                    f"retakes or supplementary submission.",
+                )
             )
 
         # Rule 4
-        if (
-            recent >= 75
-            and trend == "Improving"
-        ):
+        if recent >= 75 and trend == "Improving":
 
             recommendations.append(
-                {
-                    "type": "Positive Progress",
-                    "text": (
-                        f"Positive Progress: Excellent performance "
-                        f"in {subject}. Maintain current study strategy."
-                    ),
-                }
+                (
+                    "Positive Progress",
+                    f"Excellent performance in {subject}. "
+                    f"Maintain current study strategy.",
+                )
             )
 
     return recommendations
 
 
 # ============================================================
-# QUESTION ANSWERS
+# QUESTION ENGINE
 # ============================================================
 
 def answer_question(
-    question: str,
-    student_df: pd.DataFrame,
-) -> str:
+    question,
+    student_df,
+):
 
-    q = question.lower().strip()
+    q = question.lower()
 
-    # --------------------------------------------------------
-    # Focus question
-    # --------------------------------------------------------
-
+    # Focus
     if (
         "focus" in q
         or "which subject" in q
+        or "priority" in q
     ):
 
         declining = student_df[
@@ -998,7 +1241,7 @@ def answer_question(
             ]
 
             return (
-                f"You should focus first on {row['subject']}. "
+                f"Your first focus should be {row['subject']}. "
                 f"It has the lowest recent average among your "
                 f"declining subjects at {row['recent_avg']:.1f}%."
             )
@@ -1008,15 +1251,11 @@ def answer_question(
         ]
 
         return (
-            f"No subject is currently classified as Declining. "
-            f"Based on recent average, {row['subject']} has "
-            f"the lowest score at {row['recent_avg']:.1f}%."
+            f"Based on recent average, {row['subject']} currently "
+            f"has the lowest score at {row['recent_avg']:.1f}%."
         )
 
-    # --------------------------------------------------------
-    # Performance decrease
-    # --------------------------------------------------------
-
+    # Why decreased
     if (
         "decreased" in q
         or "decrease" in q
@@ -1034,68 +1273,56 @@ def answer_question(
 
             return (
                 "The available records do not currently show "
-                "any subject classified as Declining."
+                "a Declining performance trend."
             )
 
-        responses = []
+        explanations = []
 
         for _, row in declining.iterrows():
 
-            change = (
+            difference = (
                 row["recent_avg"]
                 - row["previous_avg"]
             )
 
-            response = (
-                f"{row['subject']}: recent average "
-                f"{row['recent_avg']:.1f}% compared with "
-                f"previous average {row['previous_avg']:.1f}% "
-                f"(change {change:+.1f} percentage points), "
-                f"attendance {row['attendance']:.1f}%, and "
-                f"{int(row['missed_assessments'])} missed "
-                f"assessment(s)."
+            explanations.append(
+                f"{row['subject']} changed by "
+                f"{difference:+.1f} percentage points; "
+                f"attendance is {row['attendance']:.1f}% and "
+                f"{int(row['missed_assessments'])} assessment(s) "
+                f"were missed."
             )
 
-            responses.append(response)
+        return " ".join(explanations)
 
-        return " ".join(responses)
-
-    # --------------------------------------------------------
     # Attendance
-    # --------------------------------------------------------
-
     if "attendance" in q:
 
         average = student_df[
             "attendance"
         ].mean()
 
-        low_attendance = student_df[
+        low = student_df[
             student_df["attendance"] < 75
         ]
 
-        if low_attendance.empty:
+        if low.empty:
 
             return (
-                f"Your average attendance across the available "
-                f"subjects is {average:.1f}%. No subject is below "
-                f"the 75% attendance threshold."
+                f"Average attendance is {average:.1f}%. "
+                "No subject is below the 75% threshold."
             )
 
         subjects = ", ".join(
-            low_attendance["subject"]
-            .tolist()
+            low["subject"]
         )
 
         return (
-            f"Your average attendance is {average:.1f}%. "
-            f"The following subjects are below 75%: {subjects}."
+            f"Average attendance is {average:.1f}%. "
+            f"Subjects below 75%: {subjects}."
         )
 
-    # --------------------------------------------------------
-    # Recent performance
-    # --------------------------------------------------------
-
+    # Performance
     if (
         "performance" in q
         or "marks" in q
@@ -1107,14 +1334,11 @@ def answer_question(
         ].mean()
 
         return (
-            f"Your average recent academic score across the "
-            f"available subjects is {average:.1f}%."
+            f"Your average recent score across the available "
+            f"subjects is {average:.1f}%."
         )
 
-    # --------------------------------------------------------
-    # Declining subjects
-    # --------------------------------------------------------
-
+    # Declining
     if "declining" in q:
 
         declining = student_df[
@@ -1125,101 +1349,88 @@ def answer_question(
         if declining.empty:
 
             return (
-                "There are no subjects currently classified "
-                "as Declining."
+                "No subject is currently classified as Declining."
             )
 
-        subjects = ", ".join(
-            declining["subject"].tolist()
-        )
-
         return (
-            f"The subjects currently classified as Declining "
-            f"are: {subjects}."
+            "Declining subjects: "
+            + ", ".join(
+                declining["subject"]
+            )
         )
 
-    # --------------------------------------------------------
-    # General fallback
-    # --------------------------------------------------------
-
-    average_recent = student_df[
+    # General
+    average = student_df[
         "recent_avg"
     ].mean()
 
-    average_attendance = student_df[
+    attendance = student_df[
         "attendance"
     ].mean()
 
-    risk_subjects = int(
+    risks = int(
         student_df["risk"].sum()
     )
 
     return (
-        f"Based on the available academic records, your average "
-        f"recent score is {average_recent:.1f}%, average "
-        f"attendance is {average_attendance:.1f}%, and "
-        f"{risk_subjects} subject(s) currently meet the defined "
-        f"academic-risk rule."
+        f"Your current academic summary is: average recent "
+        f"score {average:.1f}%, average attendance "
+        f"{attendance:.1f}%, with {risks} subject(s) meeting "
+        f"the defined academic-risk criteria."
     )
 
 
 # ============================================================
-# LOAD REAL DATASET
+# LOAD DATA
 # ============================================================
 
 try:
 
-    raw_data = load_excel_dataset(
+    raw_data = load_dataset(
         DATA_PATH
     )
 
-except FileNotFoundError as exc:
+except FileNotFoundError:
 
     st.error(
-        "❌ Required dataset was not found."
+        "Required dataset was not found."
     )
 
-    st.info(
-        f"Place the Excel file at:\n\n"
-        f"`{DATA_PATH}`"
+    st.code(
+        DATA_PATH
     )
 
     st.stop()
 
-except Exception as exc:
+except Exception as error:
 
     st.error(
-        "❌ The dataset could not be loaded."
+        "Unable to read the Excel dataset."
     )
 
-    st.exception(exc)
+    st.exception(error)
 
     st.stop()
 
 
 # ============================================================
-# STANDARDIZE DATASET
+# PREPARE DATA
 # ============================================================
 
 try:
 
-    data = standardize_dataset(
+    data = prepare_dataset(
         raw_data
     )
 
-except Exception as exc:
+except Exception as error:
 
     st.error(
-        "❌ The Excel dataset could not be mapped "
-        "to the required academic fields."
+        "The Excel file could not be mapped to the "
+        "academic dashboard fields."
     )
 
-    st.info(
-        "Please check the column names in "
-        "`Subject_Analytics_Dataset_200_Students.xlsx`."
-    )
-
-    st.exception(exc)
+    st.exception(error)
 
     st.stop()
 
@@ -1227,21 +1438,50 @@ except Exception as exc:
 if data.empty:
 
     st.error(
-        "No usable academic records remain after data cleaning."
+        "No valid academic records were available "
+        "after data preparation."
     )
 
     st.stop()
 
 
 # ============================================================
-# DATASET SUMMARY
+# TRAIN MODELS
 # ============================================================
+
+try:
+
+    (
+        logistic_model,
+        forest_model,
+        model_metrics,
+        feature_importance,
+    ) = train_models(data)
+
+except Exception as error:
+
+    st.error(
+        "Machine-learning model training could not be completed."
+    )
+
+    st.exception(error)
+
+    st.stop()
+
+
+# ============================================================
+# STUDENT SUMMARY
+# ============================================================
+
+summary = student_summary(
+    data
+)
 
 total_students = data[
     "student_id"
 ].nunique()
 
-total_subject_records = len(data)
+total_records = len(data)
 
 total_subjects = data[
     "subject"
@@ -1249,152 +1489,110 @@ total_subjects = data[
 
 
 # ============================================================
-# TRAIN ML MODELS
-# ============================================================
-
-try:
-
-    (
-        logistic_model,
-        random_forest_model,
-        model_metrics,
-        feature_importance,
-    ) = train_models(data)
-
-except Exception as exc:
-
-    st.error(
-        "❌ Machine-learning training failed."
-    )
-
-    st.exception(exc)
-
-    st.stop()
-
-
-# ============================================================
 # SIDEBAR
 # ============================================================
 
-st.sidebar.markdown(
-    """
-    <div style="
-        font-size:1.35rem;
-        font-weight:900;
-        color:#ffffff;
-    ">
-        🎓 BITS Pilani
-    </div>
+with st.sidebar:
 
-    <div style="
-        font-size:0.95rem;
-        color:#cbd5e1;
-        margin-top:5px;
-    ">
-        AI Student Performance Advisor
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+    st.markdown(
+        """
+        <div class="sidebar-brand">
 
-st.sidebar.markdown("---")
+            <div class="sidebar-brand-title">
+                🎓 BITS Pilani
+            </div>
 
-st.sidebar.markdown(
-    "### Dataset"
-)
+            <div class="sidebar-brand-subtitle">
+                AI-Based Student Performance Advisor
+            </div>
 
-st.sidebar.success(
-    "Using the real Excel dataset"
-)
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-st.sidebar.caption(
-    DATA_PATH
-)
+    st.markdown(
+        "### Dashboard Controls"
+    )
 
-st.sidebar.markdown(
-    f"""
-    **Students:** {total_students}  
-    **Subject Records:** {total_subject_records}  
-    **Subjects:** {total_subjects}
-    """
-)
+    st.markdown(
+        "#### Student"
+    )
 
-st.sidebar.markdown("---")
+    student_options = sorted(
+        data["student_id"].unique()
+    )
 
-# ------------------------------------------------------------
-# Student Selector
-# ------------------------------------------------------------
+    selected_student = st.selectbox(
+        "Select Student",
+        student_options,
+    )
 
-student_ids = sorted(
-    data["student_id"]
-    .unique()
-    .tolist()
-)
+    st.markdown(
+        "#### Prediction Model"
+    )
 
-selected_student = st.sidebar.selectbox(
-    "Select Student",
-    student_ids,
-)
+    model_choice = st.radio(
+        "Select Model",
+        [
+            "Random Forest (Main)",
+            "Logistic Regression (Baseline)",
+        ],
+    )
 
-# ------------------------------------------------------------
-# Model Selector
-# ------------------------------------------------------------
+    if model_choice == "Random Forest (Main)":
 
-selected_model_name = st.sidebar.radio(
-    "Prediction Model",
-    [
-        "Random Forest (Main)",
-        "Logistic Regression (Baseline)",
-    ],
-)
+        active_model = forest_model
 
-if (
-    selected_model_name
-    == "Random Forest (Main)"
-):
+    else:
 
-    selected_model = random_forest_model
+        active_model = logistic_model
 
-else:
+    st.markdown("---")
 
-    selected_model = logistic_model
+    st.markdown(
+        "### Dataset Information"
+    )
+
+    st.write(
+        f"**Unique Students:** {total_students}"
+    )
+
+    st.write(
+        f"**Subject Records:** {total_records}"
+    )
+
+    st.write(
+        f"**Subjects:** {total_subjects}"
+    )
+
+    st.caption(
+        f"Source: {DATA_PATH}"
+    )
 
 
 # ============================================================
 # SELECTED STUDENT
 # ============================================================
 
-student_df = data[
+selected_student_data = data[
     data["student_id"]
     == selected_student
 ].copy()
 
-if student_df.empty:
-
-    st.error(
-        "No academic records were found for the selected student."
-    )
-
-    st.stop()
+selected_summary = summary[
+    summary["student_id"]
+    == selected_student
+].iloc[0]
 
 
-# ============================================================
-# STUDENT RISK PREDICTION
-# ============================================================
-
-risk_probability = (
-    get_student_risk_probability(
-        student_df,
-        selected_model,
-    )
-)
-
-risk_class = int(
-    risk_probability >= 0.50
+predicted_class, risk_probability = predict_student_risk(
+    selected_student_data,
+    active_model,
 )
 
 risk_label = RISK_LABELS[
-    risk_class
+    predicted_class
 ]
 
 
@@ -1402,33 +1600,152 @@ risk_label = RISK_LABELS[
 # HEADER
 # ============================================================
 
-st.markdown(
-    """
-    <div class="main-title">
-        🎓 BITS Pilani — AI-Based Student Performance Advisor
-    </div>
-
-    <div class="subtitle">
-        Academic performance analysis, learning support,
-        machine-learning risk classification, and
-        personalized study guidance.
-    </div>
-    """,
-    unsafe_allow_html=True,
+header_left, header_right = st.columns(
+    [4, 1]
 )
 
+with header_left:
+
+    st.markdown(
+        """
+        <div class="dashboard-header">
+
+            <div class="dashboard-title">
+                Student Performance Dashboard
+            </div>
+
+            <div class="dashboard-subtitle">
+                BITS Pilani · AI-Based Academic Learning Support
+                and Performance Visualization System
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+with header_right:
+
+    st.markdown(
+        f"""
+        <div class="dashboard-header">
+
+            <div class="data-status">
+                <strong>Live Dataset</strong><br>
+                {total_students} unique students<br>
+                {total_records} academic records
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
 
 # ============================================================
-# TABS
+# STUDENT PROFILE STRIP
 # ============================================================
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(
+profile_col1, profile_col2, profile_col3, profile_col4 = st.columns(
+    [2.2, 1.3, 1.3, 1.5]
+)
+
+with profile_col1:
+
+    st.markdown(
+        f"""
+        <div class="profile-card">
+
+            <div class="profile-name">
+                👤 {selected_summary["student_name"]}
+            </div>
+
+            <div class="profile-id">
+                Student ID: {selected_student}
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+with profile_col2:
+
+    st.markdown(
+        f"""
+        <div class="profile-card">
+
+            <div class="profile-stat-label">
+                Department
+            </div>
+
+            <div class="profile-stat-value">
+                {selected_summary["department"]}
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+with profile_col3:
+
+    st.markdown(
+        f"""
+        <div class="profile-card">
+
+            <div class="profile-stat-label">
+                Semester
+            </div>
+
+            <div class="profile-stat-value">
+                {selected_summary["semester"]}
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+with profile_col4:
+
+    status_class = (
+        "status-good"
+        if predicted_class == 0
+        else "status-warning"
+    )
+
+    status_icon = (
+        "✅"
+        if predicted_class == 0
+        else "⚠️"
+    )
+
+    st.markdown(
+        f"""
+        <div class="{status_class}">
+            {status_icon} {risk_label}
+            <br>
+            <small>
+                ML probability: {risk_probability * 100:.1f}%
+            </small>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+# ============================================================
+# MAIN DASHBOARD TABS
+# ============================================================
+
+tab_overview, tab_subjects, tab_ml, tab_recommendations, tab_qa = st.tabs(
     [
-        "📊 Overview & Academic Risk",
-        "📚 Subject Performance & Trends",
-        "🤖 ML Diagnostics & Insights",
-        "📝 Personalized Recommendations",
-        "💬 Conversational Q&A",
+        "Overview",
+        "Subject Performance",
+        "ML Diagnostics",
+        "Study Recommendations",
+        "Academic Q&A",
     ]
 )
 
@@ -1437,126 +1754,128 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs(
 # TAB 1 — OVERVIEW
 # ============================================================
 
-with tab1:
-
-    st.subheader(
-        f"Academic Risk Status — {selected_student}"
-    )
-
-    overall_average = student_df[
-        "recent_avg"
-    ].mean()
-
-    overall_attendance = student_df[
-        "attendance"
-    ].mean()
-
-    high_risk_subjects = int(
-        student_df["risk"].sum()
-    )
+with tab_overview:
 
     # --------------------------------------------------------
-    # KPI CARDS
+    # KPI ROW
     # --------------------------------------------------------
 
-    c1, c2, c3, c4 = st.columns(4)
+    k1, k2, k3, k4 = st.columns(4)
 
-    with c1:
+    with k1:
 
         st.markdown(
             f"""
-            <div class="metric-card">
-                <div class="metric-label">
-                    Overall Average Marks
+            <div class="kpi-card">
+
+                <div class="kpi-title">
+                    Average Student Mark
                 </div>
-                <div class="metric-value">
-                    {overall_average:.1f}%
+
+                <div class="kpi-value">
+                    {selected_student_data["recent_avg"].mean():.1f}
                 </div>
-                <div class="metric-help">
-                    Average recent score
+
+                <div class="kpi-description">
+                    Average recent score / 100
                 </div>
+
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    with c2:
+    with k2:
 
         st.markdown(
             f"""
-            <div class="metric-card">
-                <div class="metric-label">
-                    Overall Attendance
+            <div class="kpi-card">
+
+                <div class="kpi-title">
+                    Attendance
                 </div>
-                <div class="metric-value">
-                    {overall_attendance:.1f}%
+
+                <div class="kpi-value">
+                    {selected_student_data["attendance"].mean():.1f}%
                 </div>
-                <div class="metric-help">
-                    Average across subjects
+
+                <div class="kpi-description">
+                    Average attendance
                 </div>
+
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    with c3:
+    with k3:
 
         st.markdown(
             f"""
-            <div class="metric-card">
-                <div class="metric-label">
+            <div class="kpi-card">
+
+                <div class="kpi-title">
                     Academic Risk Score
                 </div>
-                <div class="metric-value">
+
+                <div class="kpi-value">
                     {risk_probability * 100:.1f}%
                 </div>
-                <div class="metric-help">
-                    ML predicted risk probability
+
+                <div class="kpi-description">
+                    Predicted support probability
                 </div>
+
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    with c4:
+    with k4:
 
         st.markdown(
             f"""
-            <div class="metric-card">
-                <div class="metric-label">
+            <div class="kpi-card">
+
+                <div class="kpi-title">
                     High-Risk Subjects
                 </div>
-                <div class="metric-value">
-                    {high_risk_subjects}
+
+                <div class="kpi-value">
+                    {int(selected_student_data["risk"].sum())}
                 </div>
-                <div class="metric-help">
-                    Subjects meeting risk criteria
+
+                <div class="kpi-description">
+                    Subjects requiring attention
                 </div>
+
             </div>
             """,
             unsafe_allow_html=True,
         )
 
+    st.markdown("")
+
     # --------------------------------------------------------
-    # RISK ALERT
+    # ACADEMIC STATUS
     # --------------------------------------------------------
 
-    if risk_class == 1:
+    if predicted_class == 1:
 
         st.markdown(
             f"""
-            <div class="risk-high">
-                <h3 style="color:#ffffff;">
-                    ⚠️ Requires Academic Attention
-                </h3>
+            <div class="status-danger">
 
-                <div style="color:#ffffff;">
-                    The {selected_model_name} model predicts a
-                    {risk_probability * 100:.1f}% probability of
-                    academic risk for {selected_student}.
-                    Review the subject-level indicators and
-                    personalized recommendations.
-                </div>
+                ⚠️ <strong>Learning Support Needed</strong>
+
+                <br>
+
+                The selected model estimates a
+                <strong>{risk_probability * 100:.1f}%</strong>
+                probability of academic risk.
+
+                Review the subject-level results below.
+
             </div>
             """,
             unsafe_allow_html=True,
@@ -1566,87 +1885,345 @@ with tab1:
 
         st.markdown(
             f"""
-            <div class="risk-low">
-                <h3 style="color:#ffffff;">
-                    ✅ No Immediate Risk
-                </h3>
+            <div class="status-good">
 
-                <div style="color:#ffffff;">
-                    The {selected_model_name} model predicts a
-                    {risk_probability * 100:.1f}% probability of
-                    academic risk for {selected_student}.
-                    Continue monitoring academic performance.
-                </div>
+                ✅ <strong>Good Academic Standing</strong>
+
+                <br>
+
+                The selected model estimates a
+                <strong>{risk_probability * 100:.1f}%</strong>
+                probability of academic risk.
+
+                Continue monitoring performance.
+
             </div>
             """,
             unsafe_allow_html=True,
         )
 
     # --------------------------------------------------------
-    # SUBJECT STATUS
+    # MAIN TABLE
     # --------------------------------------------------------
 
-    st.subheader(
-        "Subject-Level Academic Status"
+    st.markdown(
+        """
+        <div class="section-card">
+
+            <div class="section-title">
+                Academic Details of Student
+            </div>
+
+            <div class="section-description">
+                Subject-level academic records from the
+                selected student's actual dataset.
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    overview_table = student_df[
+    overview = selected_student_data[
         [
             "subject",
-            "recent_avg",
             "attendance",
+            "assignment_avg",
+            "quiz_avg",
+            "midsem_marks",
+            "comprehensive_marks",
+            "recent_avg",
             "performance_trend",
-            "missed_assessments",
             "risk",
         ]
     ].copy()
 
-    overview_table["risk"] = (
-        overview_table["risk"]
-        .map(RISK_LABELS)
-    )
+    overview["risk"] = overview[
+        "risk"
+    ].map(RISK_LABELS)
 
-    overview_table.columns = [
+    overview.columns = [
         "Subject",
-        "Recent Average (%)",
-        "Attendance (%)",
-        "Performance Trend",
-        "Missed Assessments",
-        "Academic Risk",
+        "Attendance %",
+        "Assignment %",
+        "Quiz %",
+        "Midsem",
+        "Comprehensive",
+        "Recent Avg %",
+        "Trend",
+        "Academic Status",
     ]
 
     st.dataframe(
-        overview_table.style.format(
+        overview.style.format(
             {
-                "Recent Average (%)": "{:.1f}",
-                "Attendance (%)": "{:.1f}",
+                "Attendance %": "{:.1f}",
+                "Assignment %": "{:.1f}",
+                "Quiz %": "{:.1f}",
+                "Midsem": "{:.1f}",
+                "Comprehensive": "{:.1f}",
+                "Recent Avg %": "{:.1f}",
             }
         ),
         use_container_width=True,
         hide_index=True,
     )
 
+    # --------------------------------------------------------
+    # THREE-COLUMN VISUAL AREA
+    # --------------------------------------------------------
+
+    st.markdown("")
+
+    chart1, chart2, chart3 = st.columns(3)
+
+    # --------------------------------------------------------
+    # Chart 1 — Subject Recent Marks
+    # --------------------------------------------------------
+
+    with chart1:
+
+        st.markdown(
+            """
+            <div class="section-title">
+                Recent Performance by Subject
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        recent_chart = selected_student_data.copy()
+
+        fig = px.bar(
+            recent_chart,
+            x="subject",
+            y="recent_avg",
+            text="recent_avg",
+            labels={
+                "subject": "Subject",
+                "recent_avg": "Recent Average (%)",
+            },
+        )
+
+        fig.update_traces(
+            texttemplate="%{text:.1f}",
+            textposition="outside",
+        )
+
+        fig.update_yaxes(
+            range=[0, 110],
+            gridcolor="#cbd5e1",
+            tickfont=dict(color="#000000"),
+        )
+
+        fig.update_xaxes(
+            tickangle=-35,
+            tickfont=dict(color="#000000"),
+        )
+
+        fig.update_layout(
+            height=330,
+            margin=dict(
+                l=20,
+                r=10,
+                t=20,
+                b=80,
+            ),
+            paper_bgcolor="#ffffff",
+            plot_bgcolor="#ffffff",
+            font=dict(
+                color="#000000"
+            ),
+            showlegend=False,
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True,
+        )
+
+    # --------------------------------------------------------
+    # Chart 2 — Attendance
+    # --------------------------------------------------------
+
+    with chart2:
+
+        st.markdown(
+            """
+            <div class="section-title">
+                Attendance by Subject
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        attendance_chart = selected_student_data.copy()
+
+        attendance_chart["Status"] = np.where(
+            attendance_chart["attendance"] >= 75,
+            "Regular Attendance",
+            "Below 75%",
+        )
+
+        fig = px.bar(
+            attendance_chart,
+            x="subject",
+            y="attendance",
+            text="attendance",
+            labels={
+                "subject": "Subject",
+                "attendance": "Attendance (%)",
+            },
+            color="Status",
+        )
+
+        fig.update_traces(
+            texttemplate="%{text:.1f}%",
+            textposition="outside",
+        )
+
+        fig.add_hline(
+            y=75,
+            line_dash="dash",
+            annotation_text="75% Threshold",
+            annotation_font_color="#000000",
+        )
+
+        fig.update_yaxes(
+            range=[0, 110],
+            gridcolor="#cbd5e1",
+            tickfont=dict(color="#000000"),
+        )
+
+        fig.update_xaxes(
+            tickangle=-35,
+            tickfont=dict(color="#000000"),
+        )
+
+        fig.update_layout(
+            height=330,
+            margin=dict(
+                l=20,
+                r=10,
+                t=20,
+                b=80,
+            ),
+            paper_bgcolor="#ffffff",
+            plot_bgcolor="#ffffff",
+            font=dict(
+                color="#000000"
+            ),
+            legend=dict(
+                font=dict(
+                    color="#000000"
+                )
+            ),
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True,
+        )
+
+    # --------------------------------------------------------
+    # Chart 3 — Grade Distribution
+    # --------------------------------------------------------
+
+    with chart3:
+
+        st.markdown(
+            """
+            <div class="section-title">
+                Student Grade Distribution
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        grades = (
+            selected_student_data[
+                "grade"
+            ]
+            .value_counts()
+            .reindex(
+                ["A", "B", "C", "D", "F"],
+                fill_value=0,
+            )
+            .reset_index()
+        )
+
+        grades.columns = [
+            "Grade",
+            "Subjects",
+        ]
+
+        fig = px.bar(
+            grades,
+            x="Grade",
+            y="Subjects",
+            text="Subjects",
+            labels={
+                "Grade": "Grade",
+                "Subjects": "Number of Subjects",
+            },
+        )
+
+        fig.update_traces(
+            textposition="outside",
+        )
+
+        fig.update_yaxes(
+            dtick=1,
+            gridcolor="#cbd5e1",
+            tickfont=dict(color="#000000"),
+        )
+
+        fig.update_xaxes(
+            tickfont=dict(color="#000000"),
+        )
+
+        fig.update_layout(
+            height=330,
+            margin=dict(
+                l=20,
+                r=10,
+                t=20,
+                b=50,
+            ),
+            paper_bgcolor="#ffffff",
+            plot_bgcolor="#ffffff",
+            font=dict(
+                color="#000000"
+            ),
+            showlegend=False,
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True,
+        )
+
 
 # ============================================================
 # TAB 2 — SUBJECT PERFORMANCE
 # ============================================================
 
-with tab2:
+with tab_subjects:
 
     st.subheader(
         "Subject-Wise Performance & Trends"
     )
 
     # --------------------------------------------------------
-    # MARKS BREAKDOWN
+    # Marks comparison
     # --------------------------------------------------------
 
-    chart_data = student_df[
+    chart_data = selected_student_data[
         [
             "subject",
+            "previous_avg",
             "midsem_marks",
             "recent_avg",
-            "previous_avg",
         ]
     ].melt(
         id_vars="subject",
@@ -1654,15 +2231,14 @@ with tab2:
         value_name="Marks",
     )
 
-    chart_data["Measure"] = (
-        chart_data["Measure"]
-        .replace(
-            {
-                "midsem_marks": "Midsem",
-                "recent_avg": "Recent Average",
-                "previous_avg": "Previous Average",
-            }
-        )
+    chart_data["Measure"] = chart_data[
+        "Measure"
+    ].replace(
+        {
+            "previous_avg": "Previous Average",
+            "midsem_marks": "Midsem",
+            "recent_avg": "Recent Average",
+        }
     )
 
     fig = px.bar(
@@ -1675,7 +2251,7 @@ with tab2:
         labels={
             "subject": "Subject",
             "Marks": "Marks (%)",
-            "Measure": "Academic Measure",
+            "Measure": "Measure",
         },
     )
 
@@ -1686,31 +2262,14 @@ with tab2:
 
     fig.update_yaxes(
         range=[0, 110],
-        gridcolor="#475569",
-        tickfont=dict(
-            color="#ffffff"
-        ),
-        title_font=dict(
-            color="#ffffff"
-        ),
-    )
-
-    fig.update_xaxes(
-        tickfont=dict(
-            color="#ffffff"
-        ),
-        title_font=dict(
-            color="#ffffff"
-        ),
+        gridcolor="#cbd5e1",
     )
 
     fig.update_layout(
-        title="Subject Marks Breakdown",
-        paper_bgcolor="#111827",
-        plot_bgcolor="#111827",
-        font=dict(
-            color="#ffffff"
-        ),
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
+        font=dict(color="#000000"),
+        height=450,
     )
 
     st.plotly_chart(
@@ -1719,18 +2278,18 @@ with tab2:
     )
 
     # --------------------------------------------------------
-    # PRIORITY MATRIX
+    # Priority matrix
     # --------------------------------------------------------
 
     st.subheader(
         "Ranking & Priority Matrix"
     )
 
-    priority = student_df.copy()
+    priority = selected_student_data.copy()
 
     priority["Priority Score"] = (
         priority.apply(
-            calculate_priority,
+            priority_score,
             axis=1,
         )
     )
@@ -1757,7 +2316,6 @@ with tab2:
             "subject",
             "Priority Score",
             "recent_avg",
-            "previous_avg",
             "attendance",
             "performance_trend",
             "missed_assessments",
@@ -1765,12 +2323,11 @@ with tab2:
     ].copy()
 
     priority_display.columns = [
-        "Priority Rank",
+        "Rank",
         "Subject",
         "Priority Score",
-        "Recent Average (%)",
-        "Previous Average (%)",
-        "Attendance (%)",
+        "Recent Average %",
+        "Attendance %",
         "Performance Trend",
         "Missed Assessments",
     ]
@@ -1778,10 +2335,8 @@ with tab2:
     st.dataframe(
         priority_display.style.format(
             {
-                "Recent Average (%)": "{:.1f}",
-                "Previous Average (%)": "{:.1f}",
-                "Attendance (%)": "{:.1f}",
-                "Priority Score": "{:.0f}",
+                "Recent Average %": "{:.1f}",
+                "Attendance %": "{:.1f}",
             }
         ),
         use_container_width=True,
@@ -1789,21 +2344,20 @@ with tab2:
     )
 
     # --------------------------------------------------------
-    # ATTENDANCE VS PERFORMANCE
+    # Attendance / Performance relationship
     # --------------------------------------------------------
 
     st.subheader(
-        "Attendance vs. Performance"
+        "Attendance vs. Academic Performance"
     )
 
-    fig_scatter = px.scatter(
-        student_df,
+    fig = px.scatter(
+        selected_student_data,
         x="attendance",
         y="recent_avg",
-        color="performance_trend",
-        size="missed_assessments",
-        hover_name="subject",
         text="subject",
+        size="missed_assessments",
+        color="performance_trend",
         labels={
             "attendance": "Attendance (%)",
             "recent_avg": "Recent Average (%)",
@@ -1811,34 +2365,33 @@ with tab2:
         },
     )
 
-    fig_scatter.update_traces(
+    fig.add_vline(
+        x=75,
+        line_dash="dash",
+        annotation_text="75% Attendance",
+        annotation_font_color="#000000",
+    )
+
+    fig.add_hline(
+        y=50,
+        line_dash="dash",
+        annotation_text="50% Score",
+        annotation_font_color="#000000",
+    )
+
+    fig.update_traces(
         textposition="top center"
     )
 
-    fig_scatter.add_vline(
-        x=75,
-        line_dash="dash",
-        annotation_text="75% Attendance Threshold",
-        annotation_font_color="#ffffff",
-    )
-
-    fig_scatter.add_hline(
-        y=50,
-        line_dash="dash",
-        annotation_text="50% Recent Average",
-        annotation_font_color="#ffffff",
-    )
-
-    fig_scatter.update_layout(
-        paper_bgcolor="#111827",
-        plot_bgcolor="#111827",
-        font=dict(
-            color="#ffffff"
-        ),
+    fig.update_layout(
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
+        font=dict(color="#000000"),
+        height=450,
     )
 
     st.plotly_chart(
-        fig_scatter,
+        fig,
         use_container_width=True,
     )
 
@@ -1847,38 +2400,38 @@ with tab2:
 # TAB 3 — ML DIAGNOSTICS
 # ============================================================
 
-with tab3:
+with tab_ml:
 
     st.subheader(
-        "ML Model Diagnostics & Insights"
+        "Machine-Learning Model Diagnostics"
     )
 
     # --------------------------------------------------------
-    # MODEL COMPARISON
+    # Comparison table
     # --------------------------------------------------------
 
-    rows = []
+    model_rows = []
 
-    for model_name in [
+    for name in [
         "Logistic Regression",
         "Random Forest",
     ]:
 
-        m = model_metrics[
-            model_name
-        ]
+        metric = model_metrics[name]
 
-        rows.append(
+        model_rows.append(
             {
-                "Model": model_name,
-                "Accuracy": m["Accuracy"],
-                "Precision": m["Precision"],
-                "Recall": m["Recall"],
-                "F1-Score": m["F1-Score"],
+                "Model": name,
+                "Accuracy": metric["Accuracy"],
+                "Precision": metric["Precision"],
+                "Recall": metric["Recall"],
+                "F1-Score": metric["F1-Score"],
             }
         )
 
-    comparison = pd.DataFrame(rows)
+    comparison = pd.DataFrame(
+        model_rows
+    )
 
     st.dataframe(
         comparison.style.format(
@@ -1894,100 +2447,14 @@ with tab3:
     )
 
     # --------------------------------------------------------
-    # CONFUSION MATRICES
-    # --------------------------------------------------------
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-
-        st.markdown(
-            "#### Logistic Regression"
-        )
-
-        cm = model_metrics[
-            "Logistic Regression"
-        ]["Confusion Matrix"]
-
-        fig_cm = go.Figure(
-            data=go.Heatmap(
-                z=cm,
-                x=[
-                    "Predicted No Risk",
-                    "Predicted Risk",
-                ],
-                y=[
-                    "Actual No Risk",
-                    "Actual Risk",
-                ],
-                text=cm,
-                texttemplate="%{text}",
-                colorscale="Blues",
-            )
-        )
-
-        fig_cm.update_layout(
-            paper_bgcolor="#111827",
-            plot_bgcolor="#111827",
-            font=dict(
-                color="#ffffff"
-            ),
-        )
-
-        st.plotly_chart(
-            fig_cm,
-            use_container_width=True,
-        )
-
-    with col2:
-
-        st.markdown(
-            "#### Random Forest"
-        )
-
-        cm = model_metrics[
-            "Random Forest"
-        ]["Confusion Matrix"]
-
-        fig_cm = go.Figure(
-            data=go.Heatmap(
-                z=cm,
-                x=[
-                    "Predicted No Risk",
-                    "Predicted Risk",
-                ],
-                y=[
-                    "Actual No Risk",
-                    "Actual Risk",
-                ],
-                text=cm,
-                texttemplate="%{text}",
-                colorscale="Blues",
-            )
-        )
-
-        fig_cm.update_layout(
-            paper_bgcolor="#111827",
-            plot_bgcolor="#111827",
-            font=dict(
-                color="#ffffff"
-            ),
-        )
-
-        st.plotly_chart(
-            fig_cm,
-            use_container_width=True,
-        )
-
-    # --------------------------------------------------------
-    # FEATURE IMPORTANCE
+    # Feature Importance
     # --------------------------------------------------------
 
     st.subheader(
-        "Feature Importance — Random Forest"
+        "Academic Indicators Influencing Risk Prediction"
     )
 
-    readable_names = {
+    readable = {
         "attendance": "Attendance",
         "assignment_avg": "Assignment Average",
         "quiz_avg": "Quiz Average",
@@ -1999,91 +2466,150 @@ with tab3:
 
     importance = feature_importance.copy()
 
-    importance["Feature"] = (
-        importance["Feature"]
-        .map(readable_names)
-    )
+    importance["Feature"] = importance[
+        "Feature"
+    ].map(readable)
 
     importance = importance.sort_values(
         "Importance",
         ascending=True,
     )
 
-    fig_importance = px.bar(
+    fig = px.bar(
         importance,
         x="Importance",
         y="Feature",
         orientation="h",
         text="Importance",
         labels={
-            "Importance": "Feature Importance",
+            "Importance": "Importance",
             "Feature": "Academic Indicator",
         },
     )
 
-    fig_importance.update_traces(
+    fig.update_traces(
         texttemplate="%{text:.3f}",
         textposition="outside",
     )
 
-    fig_importance.update_layout(
-        paper_bgcolor="#111827",
-        plot_bgcolor="#111827",
-        font=dict(
-            color="#ffffff"
-        ),
+    fig.update_layout(
+        paper_bgcolor="#ffffff",
+        plot_bgcolor="#ffffff",
+        font=dict(color="#000000"),
+        height=450,
     )
 
     st.plotly_chart(
-        fig_importance,
+        fig,
         use_container_width=True,
     )
 
     # --------------------------------------------------------
-    # MODEL OUTPUT
+    # Confusion matrices
+    # --------------------------------------------------------
+
+    cm1, cm2 = st.columns(2)
+
+    with cm1:
+
+        st.markdown(
+            "**Logistic Regression — Confusion Matrix**"
+        )
+
+        matrix = model_metrics[
+            "Logistic Regression"
+        ]["Confusion Matrix"]
+
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=matrix,
+                x=[
+                    "Predicted No Risk",
+                    "Predicted Risk",
+                ],
+                y=[
+                    "Actual No Risk",
+                    "Actual Risk",
+                ],
+                text=matrix,
+                texttemplate="%{text}",
+                colorscale="Blues",
+            )
+        )
+
+        fig.update_layout(
+            paper_bgcolor="#ffffff",
+            plot_bgcolor="#ffffff",
+            font=dict(color="#000000"),
+            height=330,
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True,
+        )
+
+    with cm2:
+
+        st.markdown(
+            "**Random Forest — Confusion Matrix**"
+        )
+
+        matrix = model_metrics[
+            "Random Forest"
+        ]["Confusion Matrix"]
+
+        fig = go.Figure(
+            data=go.Heatmap(
+                z=matrix,
+                x=[
+                    "Predicted No Risk",
+                    "Predicted Risk",
+                ],
+                y=[
+                    "Actual No Risk",
+                    "Actual Risk",
+                ],
+                text=matrix,
+                texttemplate="%{text}",
+                colorscale="Blues",
+            )
+        )
+
+        fig.update_layout(
+            paper_bgcolor="#ffffff",
+            plot_bgcolor="#ffffff",
+            font=dict(color="#000000"),
+            height=330,
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True,
+        )
+
+    # --------------------------------------------------------
+    # Current student model output
     # --------------------------------------------------------
 
     st.subheader(
-        f"Model Risk Output — {selected_student}"
+        f"Current Student Prediction — {selected_student}"
     )
 
-    output1, output2 = st.columns(2)
+    prediction_col1, prediction_col2 = st.columns(2)
 
-    with output1:
+    with prediction_col1:
 
-        st.markdown(
-            f"""
-            <div class="metric-card">
-                <div class="metric-label">
-                    Prediction Model
-                </div>
-                <div class="metric-value"
-                     style="font-size:1.4rem;">
-                    {selected_model_name}
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        st.metric(
+            "Predicted Academic Status",
+            risk_label,
         )
 
-    with output2:
+    with prediction_col2:
 
-        st.markdown(
-            f"""
-            <div class="metric-card">
-                <div class="metric-label">
-                    Predicted Academic Risk
-                </div>
-                <div class="metric-value"
-                     style="font-size:1.4rem;">
-                    {risk_label}
-                </div>
-                <div class="metric-help">
-                    Probability: {risk_probability * 100:.1f}%
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        st.metric(
+            "Risk Probability",
+            f"{risk_probability * 100:.1f}%",
         )
 
 
@@ -2091,35 +2617,37 @@ with tab3:
 # TAB 4 — RECOMMENDATIONS
 # ============================================================
 
-with tab4:
+with tab_recommendations:
 
     st.subheader(
-        "Personalized Study Recommendations"
+        "Personalized Study Improvement Plan"
     )
 
     st.caption(
-        "Every recommendation is generated from the selected "
-        "student's actual records."
+        "Recommendations are generated only from the selected "
+        "student's academic records and the configured rules."
     )
 
     recommendations = generate_recommendations(
-        student_df
+        selected_student_data
     )
 
     if not recommendations:
 
         st.markdown(
             """
-            <div class="recommendation-card">
-                <div class="recommendation-title">
+            <div class="recommendation">
+
+                <div class="recommendation-heading">
                     ✅ No Specific Intervention Rule Triggered
                 </div>
 
-                <div class="recommendation-body">
-                    None of the configured academic support
-                    rules are currently triggered by the
-                    student's available records.
+                <div class="recommendation-text">
+                    The available academic records do not
+                    currently trigger any of the configured
+                    recommendation rules.
                 </div>
+
             </div>
             """,
             unsafe_allow_html=True,
@@ -2127,100 +2655,102 @@ with tab4:
 
     else:
 
-        for recommendation in recommendations:
+        for title, text in recommendations:
 
             st.markdown(
                 f"""
-                <div class="recommendation-card">
-                    <div class="recommendation-title">
-                        {recommendation["type"]}
+                <div class="recommendation">
+
+                    <div class="recommendation-heading">
+                        {title}
                     </div>
 
-                    <div class="recommendation-body">
-                        {recommendation["text"]}
+                    <div class="recommendation-text">
+                        {text}
                     </div>
+
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
     # --------------------------------------------------------
-    # ACTUAL ACADEMIC RECORDS
+    # Subject-level study summary
     # --------------------------------------------------------
 
     st.subheader(
-        "Student Academic Record"
+        "Study Focus Summary"
     )
 
-    record = student_df[
-        [
-            "subject",
-            "attendance",
-            "assignment_avg",
-            "quiz_avg",
-            "midsem_marks",
-            "comprehensive_marks",
-            "previous_avg",
-            "recent_avg",
-            "performance_trend",
-            "missed_assessments",
-            "risk",
-        ]
-    ].copy()
+    study = selected_student_data.copy()
 
-    record["risk"] = (
-        record["risk"]
-        .map(RISK_LABELS)
+    study["Priority Score"] = study.apply(
+        priority_score,
+        axis=1,
     )
 
-    record.columns = [
-        "Subject",
-        "Attendance (%)",
-        "Assignment Average (%)",
-        "Quiz Average (%)",
-        "Midsem Marks",
-        "Comprehensive Marks",
-        "Previous Average (%)",
-        "Recent Average (%)",
-        "Performance Trend",
-        "Missed Assessments",
-        "Academic Risk",
-    ]
-
-    st.dataframe(
-        record.style.format(
-            {
-                "Attendance (%)": "{:.1f}",
-                "Assignment Average (%)": "{:.1f}",
-                "Quiz Average (%)": "{:.1f}",
-                "Midsem Marks": "{:.1f}",
-                "Comprehensive Marks": "{:.1f}",
-                "Previous Average (%)": "{:.1f}",
-                "Recent Average (%)": "{:.1f}",
-            }
-        ),
-        use_container_width=True,
-        hide_index=True,
+    study = study.sort_values(
+        "Priority Score",
+        ascending=False,
     )
+
+    for _, row in study.iterrows():
+
+        if row["Priority Score"] >= 5:
+
+            status = "High Focus"
+
+        elif row["Priority Score"] >= 2:
+
+            status = "Moderate Focus"
+
+        else:
+
+            status = "Maintain"
+
+        st.markdown(
+            f"""
+            <div class="recommendation">
+
+                <div class="recommendation-heading">
+                    {row["subject"]} — {status}
+                </div>
+
+                <div class="recommendation-text">
+                    Recent average:
+                    <strong>{row["recent_avg"]:.1f}%</strong>
+                    &nbsp; | &nbsp;
+                    Attendance:
+                    <strong>{row["attendance"]:.1f}%</strong>
+                    &nbsp; | &nbsp;
+                    Trend:
+                    <strong>{row["performance_trend"]}</strong>
+                    &nbsp; | &nbsp;
+                    Missed assessments:
+                    <strong>{int(row["missed_assessments"])}</strong>
+                </div>
+
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 
 # ============================================================
 # TAB 5 — CONVERSATIONAL Q&A
 # ============================================================
 
-with tab5:
+with tab_qa:
 
     st.subheader(
-        "💬 Conversational Academic Q&A"
+        "💬 Academic Q&A"
     )
 
     st.write(
-        "Ask questions about the selected student's "
-        "actual academic records."
+        f"Ask about the academic records of {selected_student}."
     )
 
-    question_options = [
-        "Select a question...",
+    suggested_questions = [
         "Which subject should I focus on?",
         "Why has my performance decreased?",
         "What is my attendance situation?",
@@ -2229,19 +2759,22 @@ with tab5:
     ]
 
     selected_question = st.selectbox(
-        "Suggested Question",
-        question_options,
+        "Choose a question",
+        [
+            "Select a question..."
+        ] + suggested_questions,
     )
 
     custom_question = st.text_input(
-        "Or enter your own question",
+        "Or type your own question",
         placeholder=(
-            "Example: Which subjects need attention?"
+            "Example: Which subject needs the most attention?"
         ),
     )
 
     if st.button(
-        "Analyze Question"
+        "Get Academic Answer",
+        type="primary",
     ):
 
         if custom_question.strip():
@@ -2258,23 +2791,28 @@ with tab5:
                 "Please select or enter a question."
             )
 
-            question = ""
+            question = None
 
         if question:
 
-            with st.chat_message("user"):
-                st.write(question)
-
             answer = answer_question(
                 question,
-                student_df,
+                selected_student_data,
             )
 
-            with st.chat_message("assistant"):
+            st.chat_message(
+                "user"
+            ).write(
+                question
+            )
+
+            with st.chat_message(
+                "assistant"
+            ):
 
                 st.markdown(
                     f"""
-                    <div class="qa-answer">
+                    <div class="answer-card">
                         {answer}
                     </div>
                     """,
@@ -2286,26 +2824,27 @@ with tab5:
 # FOOTER
 # ============================================================
 
-st.markdown("---")
-
 st.markdown(
     f"""
-    <div style="
-        text-align:center;
-        padding:12px;
-        color:#94a3b8 !important;
-    ">
-        <strong style="color:#ffffff;">
+    <div class="footer">
+
+        <strong>
             BITS Pilani — AI-Based Student Performance Advisor
         </strong>
+
         <br>
-        <span style="color:#94a3b8;">
-            Source: {DATA_PATH}
-            &nbsp;|&nbsp;
-            {total_students} unique students
-            &nbsp;|&nbsp;
-            {total_subject_records} subject records
-        </span>
+
+        Real academic dataset:
+        {DATA_PATH}
+
+        <br>
+
+        {total_students} unique students
+        ·
+        {total_records} subject records
+        ·
+        {total_subjects} subjects
+
     </div>
     """,
     unsafe_allow_html=True,
