@@ -1,4 +1,4 @@
-
+import os
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -28,9 +28,6 @@ st.set_page_config(
 
 # ============================================================
 # LIGHT ACADEMIC THEME
-# IMPORTANT: This version intentionally avoids dark HTML cards.
-# Streamlit native containers + CSS are used so HTML tags cannot
-# accidentally appear as visible text.
 # ============================================================
 st.markdown(
     """
@@ -163,9 +160,16 @@ st.markdown(
 )
 
 # ============================================================
-# DATA
+# ROBUST DATA PATH RESOLUTION
 # ============================================================
-DATA_PATH = "data/Subject_Analytics_Dataset_200_Students.xlsx"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(BASE_DIR, "data", "Subject_Analytics_Dataset_200_Students.xlsx")
+
+# Fallback check if file is placed in root instead of data folder
+if not os.path.exists(DATA_PATH):
+    alt_path = os.path.join(BASE_DIR, "Subject_Analytics_Dataset_200_Students.xlsx")
+    if os.path.exists(alt_path):
+        DATA_PATH = alt_path
 
 REQUIRED_COLUMNS = [
     "Student_ID",
@@ -190,14 +194,16 @@ FEATURE_COLUMNS = [
 @st.cache_data(show_spinner="Loading the BITS Pilani student dataset...")
 def load_dataset(path: str) -> pd.DataFrame:
     """Load only the supplied Excel dataset and normalize column names."""
+    if not os.path.exists(path):
+        raise FileNotFoundError(
+            f"Dataset not found at expected resolved path: '{path}'. "
+            "Please ensure a 'data' folder exists with 'Subject_Analytics_Dataset_200_Students.xlsx' inside it."
+        )
+
     try:
         df = pd.read_excel(path, engine="openpyxl")
-    except FileNotFoundError:
-        raise FileNotFoundError(
-            f"Dataset not found at '{path}'. Place the Excel file at that exact path."
-        )
     except Exception as exc:
-        raise RuntimeError(f"Unable to read the Excel dataset: {exc}")
+        raise RuntimeError(f"Unable to read the Excel dataset using openpyxl: {exc}")
 
     if df.empty:
         raise ValueError("The Excel dataset is empty.")
@@ -276,9 +282,6 @@ def load_dataset(path: str) -> pd.DataFrame:
         default="Stable",
     )
 
-    # The source dataset does not need fabricated missed-assessment counts.
-    # If an explicit missed-assessment column exists, use it; otherwise
-    # derive only the specified attendance-based indicator.
     if "missed_assessments" not in df.columns:
         df["missed_assessments"] = np.where(df["Attendance"] < 75, 2, 0)
 
@@ -424,13 +427,14 @@ def safe_probability(model, row):
 
 
 # ============================================================
-# LOAD DATA
+# LOAD DATA & MODELS (WITH DETAILED ERROR DISPLAY)
 # ============================================================
 try:
     data = load_dataset(DATA_PATH)
 except Exception as exc:
-    st.error("Unable to load the supplied dataset.")
-    st.code(str(exc))
+    st.error("⚠️ Unable to load the supplied dataset.")
+    st.markdown(f"**Resolved Path Checked:** `{DATA_PATH}`")
+    st.exception(exc)
     st.stop()
 
 if data.empty:
@@ -441,7 +445,7 @@ try:
     models = train_models(data)
 except Exception as exc:
     st.error("The academic support model could not be trained.")
-    st.code(str(exc))
+    st.exception(exc)
     st.stop()
 
 # ============================================================
@@ -519,7 +523,6 @@ risk_class = int(selected_model.predict(
     student_row[FEATURE_COLUMNS].astype(float)
 )[0])
 
-# Student-level summaries are calculated from the actual records.
 average_mark = float(student_df["Final_Marks"].mean())
 average_attendance = float(student_df["Attendance"].mean())
 high_risk_subjects = int(student_df["needs_support_target"].sum())
@@ -769,9 +772,6 @@ with tabs[1]:
             ]
         ].copy()
 
-        # Priority is based only on actual student analytics:
-        # lower recent marks, low attendance, missed assessments and
-        # declining trend receive higher attention.
         priority["Priority Score"] = (
             (100 - priority["recent_avg"])
             + np.maximum(75 - priority["Attendance"], 0)
