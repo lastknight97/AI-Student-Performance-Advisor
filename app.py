@@ -165,7 +165,6 @@ st.markdown(
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH = os.path.join(BASE_DIR, "data", "Subject_Analytics_Dataset_200_Students.xlsx")
 
-# Fallback check if file is placed in root instead of data folder
 if not os.path.exists(DATA_PATH):
     alt_path = os.path.join(BASE_DIR, "Subject_Analytics_Dataset_200_Students.xlsx")
     if os.path.exists(alt_path):
@@ -208,7 +207,7 @@ def load_dataset(path: str) -> pd.DataFrame:
     if df.empty:
         raise ValueError("The Excel dataset is empty.")
 
-    # Map common variants without inventing any records.
+    # Map column variants to match required schema
     aliases = {
         "Student ID": "Student_ID",
         "student_id": "Student_ID",
@@ -221,6 +220,7 @@ def load_dataset(path: str) -> pd.DataFrame:
         "Assignment Avg": "Assignment",
         "Assignment": "Assignment",
         "assignment_avg": "Assignment",
+        "Assignment_Score": "Assignment",
         "Quiz %": "Quiz_Score",
         "Quiz Score": "Quiz_Score",
         "quiz_avg": "Quiz_Score",
@@ -262,14 +262,11 @@ def load_dataset(path: str) -> pd.DataFrame:
 
     df = df.dropna(subset=["Student_ID", "Subject"] + numeric_columns)
 
-    # Aggregate subject rows only when duplicate records for the same
-    # student + subject exist. This preserves the subject-level design.
     df = (
         df.groupby(["Student_ID", "Subject"], as_index=False)[numeric_columns]
         .mean()
     )
 
-    # Required feature engineering from the supplied records.
     df["previous_avg"] = df["Midterm_Marks"]
     df["recent_avg"] = df["Final_Marks"]
 
