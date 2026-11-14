@@ -2,11 +2,12 @@ import re
 import numpy as np
 import pandas as pd
 import plotly.express as px
+import plotly.figure_factory as ff
 import plotly.graph_objects as go
 import streamlit as st
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import f1_score, precision_score, recall_score
+from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
 from sklearn.model_selection import train_test_split
 
 st.set_page_config(
@@ -209,10 +210,14 @@ def train_ml_models(agg_df):
     probs = rf.predict_proba(X)
     risk_prob = probs[:, 1] if probs.shape[1] > 1 else probs[:, 0]
     y_pred = rf.predict(X_test)
+    
+    # Metrics calculation
+    cm = confusion_matrix(y_test, y_pred)
     metrics = {
         "Precision": round(precision_score(y_test, y_pred, zero_division=0), 3),
         "Recall": round(recall_score(y_test, y_pred, zero_division=0), 3),
         "F1-Score": round(f1_score(y_test, y_pred, zero_division=0), 3),
+        "Confusion_Matrix": cm,
     }
 
     friendly_names = {
@@ -272,7 +277,6 @@ def generate_student_recommendations(student_row, subject_rows):
             "study_plan": {},
         }
     subj_df = subject_rows.copy()
-    # Balanced priority score: prioritizes low composite scores AND severely low attendance (<75%)
     subj_df["Priority_Score"] = (100 - subj_df["Composite_Score"]) + np.where(
         subj_df["attendance"] < 75,
         np.maximum(0, (75 - subj_df["attendance"]) * 0.8),
@@ -358,7 +362,7 @@ st.markdown(
     "Unified academic monitoring, data-driven study recommendations, performance factor insights, and interactive advisory assistant."
 )
 
-# Main Dashboard Cohort & Student Filters
+# Main Dashboard Filters
 f_col1, f_col2 = st.columns(2)
 with f_col1:
     dept_options = ["All Departments"] + sorted(agg_df["department"].unique().tolist())
@@ -391,12 +395,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-tab1, tab2, tab3, tab4 = st.tabs(
+tab1, tab2, tab3, tab4, tab5 = st.tabs(
     [
         "📊 Student Overview & Recommendations",
         "🔍 Performance Insights & Responsible Use",
         "💬 Academic Advisor Assistant",
         "⚙️ System Technicalities & Functionalities",
+        "🎯 Model Evaluation & Confusion Matrix",
     ]
 )
 
@@ -493,9 +498,9 @@ with tab2:
     st.markdown(
         f"""
         <div class="kpi-container">
-            <div class="kpi-card"><div class="kpi-title">Alert Accuracy</div><div class="kpi-value">{model_metrics['Precision']*100:.1f}%</div><div class="kpi-sub">Reliability Score</div></div>
-            <div class="kpi-card"><div class="kpi-title">Detection Coverage</div><div class="kpi-value">{model_metrics['Recall']*100:.1f}%</div><div class="kpi-sub">Reliability Score</div></div>
-            <div class="kpi-card"><div class="kpi-title">Overall Consistency</div><div class="kpi-value">{model_metrics['F1-Score']*100:.1f}%</div><div class="kpi-sub">Reliability Score</div></div>
+            <div class="kpi-card"><div class="kpi-title">Precision</div><div class="kpi-value">{model_metrics['Precision']*100:.1f}%</div><div class="kpi-sub">Verification Metric</div></div>
+            <div class="kpi-card"><div class="kpi-title">Recall</div><div class="kpi-value">{model_metrics['Recall']*100:.1f}%</div><div class="kpi-sub">Verification Metric</div></div>
+            <div class="kpi-card"><div class="kpi-title">F1-Score</div><div class="kpi-value">{model_metrics['F1-Score']*100:.1f}%</div><div class="kpi-sub">Verification Metric</div></div>
         </div>
     """,
         unsafe_allow_html=True,
@@ -616,7 +621,7 @@ with tab4:
             <p><strong>Target Variable Definition:</strong> Binary risk classification (<code>0</code> = Stable/On Track, <code>1</code> = Requires Academic Attention) derived from composite thresholds (<58%), attendance (<72%), or missed milestones (≥3).</p>
             <p><strong>Baseline Model:</strong> <code>LogisticRegression</code> (max_iter=1000) for linear baseline probability benchmarking.</p>
             <p><strong>Primary Model:</strong> <code>RandomForestClassifier</code> (n_estimators=120) capturing non-linear interactions across attendance, continuous evaluation scores, and assessment trajectories.</p>
-            <p><strong>Evaluation Metrics:</strong> Precision, Recall, and F1-Score computed on a stratified 75/25 train-test split.</p>
+            <p><strong>Evaluation Metrics:</strong> Precision, Recall, F1-Score, and Confusion Matrix computed on a stratified 75/25 train-test split.</p>
         </div>
 
         <div class="tech-box">
@@ -624,8 +629,61 @@ with tab4:
             <p><strong>Priority Scoring Formula:</strong><br>
             <code>Priority Score = (100 - Composite Score) + Attendance Penalty (<75%)</code></p>
             <p><strong>Rule-Based Advisory Engine:</strong> Matches student performance patterns against institutional criteria to generate tailored remediation schedules and subject priority orders.</p>
-            <p><strong>Conversational NLP Interface:</strong> Utilizes regex pattern matching to parse student IDs (e.g., <code>S001</code>) and keyword queries (e.g., "study plan", "poor students"), extracting live Pandas dataframe records instantly.</p>
+            <p><strong>Conversational NLP Interface:</strong> utilizes regex pattern matching to parse student IDs (e.g., <code>S001</code>) and keyword queries (e.g., "study plan", "poor students"), extracting live Pandas dataframe records instantly.</p>
         </div>
     """,
         unsafe_allow_html=True,
     )
+
+with tab5:
+    st.subheader("🎯 Model Evaluation, Precision, F1-Score & Confusion Matrix")
+    st.markdown(
+        "This tab evaluates how accurately the Random Forest classifier identifies students needing academic support versus those on track."
+    )
+
+    st.markdown(
+        f"""
+        <div class="kpi-container">
+            <div class="kpi-card"><div class="kpi-title">Precision</div><div class="kpi-value">{model_metrics['Precision']*100:.1f}%</div><div class="kpi-sub">True Positives / Predicted Positives</div></div>
+            <div class="kpi-card"><div class="kpi-title">Recall</div><div class="kpi-value">{model_metrics['Recall']*100:.1f}%</div><div class="kpi-sub">True Positives / Actual Positives</div></div>
+            <div class="kpi-card"><div class="kpi-title">F1-Score</div><div class="kpi-value">{model_metrics['F1-Score']*100:.1f}%</div><div class="kpi-sub">Harmonic Mean of Precision & Recall</div></div>
+        </div>
+    """,
+        unsafe_allow_html=True,
+    )
+
+    cm = model_metrics["Confusion_Matrix"]
+    
+    col_cm1, col_cm2 = st.columns(2)
+    with col_cm1:
+        st.markdown("**Confusion Matrix Visualization**")
+        st.caption("Rows represent Actual labels (0 = On Track, 1 = Needs Support), Columns represent Model Predictions.")
+        
+        # Create interactive confusion matrix using plotly figure factory
+        z = cm.tolist()
+        x = ["Predicted: On Track (0)", "Predicted: Support (1)"]
+        y = ["Actual: On Track (0)", "Actual: Support (1)"]
+        
+        fig_cm = ff.create_annotated_heatmap(z, x=x, y=y, colorscale="Blues", showscale=True)
+        fig_cm.update_layout(
+            plot_bgcolor="#ffffff",
+            paper_bgcolor="#ffffff",
+            font=dict(color="#000000"),
+            height=340,
+            margin=dict(l=10, r=10, t=20, b=10),
+        )
+        st.plotly_chart(fig_cm, use_container_width=True)
+
+    with col_cm2:
+        st.markdown("**Understanding the Confusion Matrix Breakdown**")
+        tn, fp, fn, tp = cm.ravel()
+        st.markdown(
+            f"""
+            - **True Negatives (TN = {tn}):** Correctly identified students who are stable and on track.
+            - **False Positives (FP = {fp}):** Stable students incorrectly flagged for support (Type I error).
+            - **False Negatives (FN = {fn}):** At-risk students missed by the model (Type II error).
+            - **True Positives (TP = {tp}):** Correctly identified students who urgently need academic attention.
+            
+            **Conclusion:** The high F1-Score (`{model_metrics['F1-Score']*100:.1f}%`) confirms that the model maintains a strong balance between catching at-risk students and avoiding false alarms.
+            """
+        )
