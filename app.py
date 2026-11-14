@@ -27,6 +27,7 @@ st.markdown(
         .kpi-value { font-size: 24px; font-weight: 800; color: #0f172a !important; line-height: 1.2; }
         .kpi-sub { font-size: 12px; color: #64748b !important; margin-top: 4px; }
         .rule-box { background-color: #ffffff; border-left: 5px solid #1e40af; border: 1px solid #cbd5e1; border-left-width: 5px; padding: 14px 18px; border-radius: 6px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .tech-box { background-color: #f8fafc; border: 1px solid #cbd5e1; border-left: 5px solid #0f172a; padding: 14px 18px; border-radius: 6px; margin-bottom: 12px; }
         .disclaimer-box { background-color: #f1f5f9; border: 1px solid #94a3b8; border-radius: 6px; padding: 12px 16px; font-size: 13px; }
         button[data-baseweb="tab"] { font-weight: 700 !important; font-size: 15px !important; color: #000000 !important; }
     </style>
@@ -127,7 +128,7 @@ def load_and_prepare_data(file_path="Subject_Analytics_Dataset_500_Students-v2.x
 
     df["Trend_Delta"] = (df["recent_avg"] - df["previous_avg"]).round(1)
     df["Performance_Trend"] = np.where(
-        df["Trend_Delta"] > 2, "improving", np.where(df["Trend_Delta"] < -3, "declining", "stable")
+        df["Trend_Delta"] > 2, "Improving", np.where(df["Trend_Delta"] < -3, "Declining", "Stable")
     )
 
     agg_df = (
@@ -150,7 +151,7 @@ def load_and_prepare_data(file_path="Subject_Analytics_Dataset_500_Students-v2.x
     )
 
     agg_df["Performance_Trend"] = np.where(
-        agg_df["Trend_Delta"] > 2, "improving", np.where(agg_df["Trend_Delta"] < -3, "declining", "stable")
+        agg_df["Trend_Delta"] > 2, "Improving", np.where(agg_df["Trend_Delta"] < -3, "Declining", "Stable")
     )
     agg_df["Risk_Target"] = np.where(
         (agg_df["Composite_Score"] < 58)
@@ -209,13 +210,29 @@ def train_ml_models(agg_df):
         "Recall": round(recall_score(y_test, y_pred, zero_division=0), 3),
         "F1-Score": round(f1_score(y_test, y_pred, zero_division=0), 3),
     }
+
+    friendly_names = {
+        "attendance": "Attendance %",
+        "quiz_avg": "Quiz Average",
+        "assignment_avg": "Assignment Average",
+        "Midsem": "Mid-Semester Score",
+        "Comprehensive_marks": "Comprehensive Exam Score",
+        "previous_avg": "Previous Term Average",
+        "recent_avg": "Recent Assessment Average",
+        "Trend_Delta": "Score Trajectory Change",
+        "missed_assessments": "Missed Assessments",
+    }
+
     importances = pd.DataFrame(
-        {"Feature": feature_cols, "Importance": rf.feature_importances_}
-    ).sort_values("Importance", ascending=True)
-    return rf, lr, risk_prob, metrics, importances, feature_cols
+        {
+            "Factor": [friendly_names[c] for c in feature_cols],
+            "Influence": rf.feature_importances_,
+        }
+    ).sort_values("Influence", ascending=True)
+    return rf, lr, risk_prob, metrics, importances, feature_cols, friendly_names
 
 
-def compute_local_explainability(student_row, agg_df, feature_cols, rf_model):
+def compute_local_explainability(student_row, agg_df, feature_cols, rf_model, friendly_names):
     cohort_means = agg_df[feature_cols].mean()
     importances = dict(zip(feature_cols, rf_model.feature_importances_))
     contributions = []
@@ -231,13 +248,13 @@ def compute_local_explainability(student_row, agg_df, feature_cols, rf_model):
         risk_impact = round(diff * imp * 100, 2)
         contributions.append(
             {
-                "Feature": feat,
+                "Factor": friendly_names[feat],
                 "Student_Value": val,
                 "Cohort_Avg": round(mean_val, 1),
-                "Risk_Contribution": risk_impact,
+                "Risk_Impact": risk_impact,
             }
         )
-    return pd.DataFrame(contributions).sort_values("Risk_Contribution", ascending=True)
+    return pd.DataFrame(contributions).sort_values("Risk_Impact", ascending=True)
 
 
 def generate_student_recommendations(student_row, subject_rows):
@@ -245,7 +262,9 @@ def generate_student_recommendations(student_row, subject_rows):
         return {
             "status": "Insufficient Evidence / Needs Review",
             "priority_subjects": [],
-            "rules_triggered": ["Data reliability check failed. Advisor review required."],
+            "rules_triggered": [
+                "Academic records are incomplete or require verification before generating automated guidance."
+            ],
             "study_plan": {},
         }
     subj_df = subject_rows.copy()
@@ -258,29 +277,29 @@ def generate_student_recommendations(student_row, subject_rows):
     for _, s_row in subj_df.iterrows():
         if (
             s_row["Composite_Score"] < 60
-            and s_row["Performance_Trend"] == "declining"
+            and s_row["Performance_Trend"] == "Declining"
             and s_row["attendance"] < 75
         ):
             rules_triggered.append(
-                f'System output: "{s_row["subject"]} currently requires additional attention. Your recent scores are declining (Midterm: {s_row["Midsem"]} → Final/Comprehensive: {s_row["Comprehensive marks"]}, Average: {s_row["Composite_Score"]}%) and attendance is below the selected target ({s_row["attendance"]}%). Review recent assessment topics and prioritize the upcoming {s_row["subject"]} assessment."'
+                f'Advisor Guidance: "{s_row["subject"]} currently requires additional attention. Your recent scores are declining (Mid-Semester: {s_row["Midsem"]} → Comprehensive: {s_row["Comprehensive marks"]}, Average: {s_row["Composite_Score"]}%) and attendance is below the target threshold ({s_row["attendance"]}%). Review recent assessment topics and prioritize the upcoming {s_row["subject"]} evaluation."'
             )
         elif s_row["Composite_Score"] < 60:
             rules_triggered.append(
-                f'System output: "{s_row["subject"]} average is {s_row["Composite_Score"]}%. Review recent assessment topics and prioritize upcoming assignments."'
+                f'Advisor Guidance: "{s_row["subject"]} average is {s_row["Composite_Score"]}%. Review recent assessment topics and prioritize upcoming coursework."'
             )
     if not rules_triggered:
         rules_triggered.append(
-            'System output: "Student performance is stable across subjects. Maintain current study strategy and attempt advanced practice sets."'
+            'Advisor Guidance: "Academic performance is steady across all subjects. Maintain your current study routine and explore advanced practice exercises."'
         )
     top_subj = priority_subjects[0] if len(priority_subjects) > 0 else "Core Subject"
     sec_subj = priority_subjects[1] if len(priority_subjects) > 1 else top_subj
     study_plan = {
-        "Monday – Tuesday (Core Remediation)": f"Focus 2 hrs/day on **{top_subj}** (highest priority). Revise recent lecture topics and solve past midterm problems.",
-        "Wednesday – Thursday (Secondary Reinforcement)": f"Dedicate 1.5 hrs/day to **{sec_subj}** and complete pending assignments to boost continuous evaluation scores.",
-        "Friday (Active Recall & Quizzes)": "Attempt 1 timed practice quiz (45 mins) covering weak modules and review error logs.",
-        "Weekend (Consolidation & Attendance Prep)": "Summarize weekly notes (1 hr) and pre-read upcoming week's syllabus to maximize class participation.",
+        "Monday – Tuesday (Primary Focus)": f"Dedicate 2 hrs/day on **{top_subj}** (top priority). Review recent lecture notes and practice past exam questions.",
+        "Wednesday – Thursday (Secondary Reinforcement)": f"Spend 1.5 hrs/day on **{sec_subj}** and complete upcoming assignments ahead of deadlines.",
+        "Friday (Self-Assessment & Quizzes)": "Take 1 timed practice quiz (45 mins) covering challenging topics and review mistakes.",
+        "Weekend (Weekly Consolidation)": "Summarize key concepts (1 hr) and preview next week's syllabus to prepare for classes.",
     }
-    status = "Requires Academic Attention" if student_row["Risk_Prob"] >= 0.5 else "On Track / Stable"
+    status = "Needs Academic Support" if student_row["Risk_Prob"] >= 0.5 else "On Track"
     return {
         "status": status,
         "priority_subjects": priority_subjects,
@@ -296,32 +315,34 @@ def process_chatbot_query(user_query, raw_df, agg_df):
     if id_match:
         s_id = id_match.group(0).upper()
         if s_id not in agg_df["student_id"].values:
-            return f"Student ID **{s_id}** was not found in the dataset."
+            return f"Student ID **{s_id}** was not found in the records."
         s_row = agg_df[agg_df["student_id"] == s_id].iloc[0]
         s_subjs = raw_df[raw_df["student_id"] == s_id]
         rec = generate_student_recommendations(s_row, s_subjs)
-        response = f"### Academic Advisory & Study Plan for **{s_id}**\n- **Department:** {s_row['department']} | **Status:** {rec['status']} (ML Risk Probability: {s_row['Risk_Prob']:.2f})\n- **Composite Score:** {s_row['Composite_Score']}/100 (Grade {s_row['Grade']}) | **Attendance:** {s_row['attendance']}%\n- **Subject Priority Order:** {', '.join(rec['priority_subjects'])}\n\n**Generated System Output (Slide 8 Rule):**\n"
+        response = f"### Academic Guidance & Study Plan for **{s_id}**\n- **Department:** {s_row['department']} | **Status:** {rec['status']} (Support Need Index: {s_row['Risk_Prob']:.2f})\n- **Overall Score:** {s_row['Composite_Score']}/100 (Grade {s_row['Grade']}) | **Attendance:** {s_row['attendance']}%\n- **Subject Priority Order:** {', '.join(rec['priority_subjects'])}\n\n**Actionable Recommendations:**\n"
         for r in rec["rules_triggered"]:
             response += f"- {r}\n"
-        response += "\n**Personalized Weekly Study Plan:**\n"
+        response += "\n**Personalized Weekly Study Schedule:**\n"
         for day, plan in rec["study_plan"].items():
             response += f"- **{day}:** {plan}\n"
         return response
     if ("study plan" in q or "schedule" in q or "timetable" in q) and (
         "all" in q or "everyone" in q or "class" in q or "cohort" in q
     ):
-        return f"### Cohort-Wide Tiered Study Plan (For All {len(agg_df)} Students)\n\n#### Tier 1: At-Risk / Students Needing Attention ({len(at_risk_df)} Students — Risk Prob ≥ 0.5)\n- **Daily Focus (2.5 hrs/day):** Prioritize lowest-scoring subject first.\n- **Attendance Mandate:** Maintain ≥ 85% attendance.\n\n#### Tier 2: Moderate Students\n- **Daily Focus (1.5 hrs/day):** Revise notes and complete assignments."
+        return f"### Cohort-Wide Tiered Study Schedule ({len(agg_df)} Students)\n\n#### Group 1: Students Needing Immediate Support ({len(at_risk_df)} Students)\n- **Daily Focus (2.5 hrs/day):** Prioritize lowest-scoring subjects first and review foundational concepts.\n- **Attendance Target:** Maintain ≥ 85% class attendance and attend weekly doubt-clearing sessions.\n\n#### Group 2: Moderate Performers (Score 60–74)\n- **Daily Focus (1.5 hrs/day):** Review lecture notes within 24 hours and submit assignments early.\n\n#### Group 3: High Performers (Score ≥ 75)\n- **Daily Focus (1 hr/day):** Maintain current study habits and engage in peer mentoring."
     if any(k in q for k in ["poor", "weak", "risk", "low", "failing", "support", "recommend", "help"]):
         if at_risk_df.empty:
-            return "Great news! Currently, no students are flagged in high risk."
+            return "All students are currently performing steadily."
         top_risk = at_risk_df.head(8)
-        resp = f"### At-Risk Students Recommendations ({len(at_risk_df)} Flagged)\n"
+        resp = f"### Priority Support Recommendations ({len(at_risk_df)} Students Flagged)\n"
         for _, row in top_risk.iterrows():
-            resp += f"- **{row['student_id']}** ({row['department']}) — Avg: `{row['Composite_Score']}`, Risk: `{row['Risk_Prob']}`\n"
+            resp += f"- **{row['student_id']}** ({row['department']}) — Overall Avg: `{row['Composite_Score']}`, Support Index: `{row['Risk_Prob']}`\n"
         return resp
-    return "I am your **AI Academic Advisor Chatbot**. Ask me about student recommendations or study plans."
+    return "I am your **Academic Advisor Assistant**. Ask me for recommendations for students needing support, a cohort-wide study plan, or a personalized plan for any Student ID (e.g., `S004`)."
 raw_df, agg_df = load_and_prepare_data()
-rf_model, lr_model, risk_probs, model_metrics, feat_imp_df, feature_cols = train_ml_models(agg_df)
+rf_model, lr_model, risk_probs, model_metrics, feat_imp_df, feature_cols, friendly_names = train_ml_models(
+    agg_df
+)
 agg_df["Risk_Prob"] = risk_probs.round(3)
 
 st.sidebar.title("🎓 Cohort & Student Filters")
@@ -331,12 +352,12 @@ filtered_agg = (
     agg_df if selected_dept == "All Departments" else agg_df[agg_df["department"] == selected_dept]
 )
 selected_student_id = st.sidebar.selectbox(
-    "Select Student ID (Anonymized)", filtered_agg["student_id"].tolist()
+    "Select Student ID", filtered_agg["student_id"].tolist()
 )
 
 st.title("AI-Based Student Performance Advisor and Visualization System")
 st.markdown(
-    "Unified academic monitoring, Slide 8 analytics-driven recommendations, model explainability, and interactive AI advisor."
+    "Unified academic monitoring, data-driven study recommendations, performance factor insights, and interactive advisory assistant."
 )
 
 at_risk_count = int((filtered_agg["Risk_Prob"] >= 0.5).sum())
@@ -347,19 +368,20 @@ st.markdown(
     f"""
     <div class="kpi-container">
         <div class="kpi-card"><div class="kpi-title">Total Students</div><div class="kpi-value">{len(filtered_agg)}</div><div class="kpi-sub">Active Records</div></div>
-        <div class="kpi-card"><div class="kpi-title">Cohort Avg Score</div><div class="kpi-value">{cohort_avg_score}</div><div class="kpi-sub">Weighted Composite</div></div>
+        <div class="kpi-card"><div class="kpi-title">Cohort Avg Score</div><div class="kpi-value">{cohort_avg_score}</div><div class="kpi-sub">Weighted Average</div></div>
         <div class="kpi-card"><div class="kpi-title">Avg Attendance</div><div class="kpi-value">{cohort_avg_att}</div><div class="kpi-sub">Overall Presence</div></div>
-        <div class="kpi-card"><div class="kpi-title">Students Needing Attention</div><div class="kpi-value" style="color: #b91c1c !important;">{at_risk_count}</div><div class="kpi-sub">Risk Prob ≥ 0.5</div></div>
+        <div class="kpi-card"><div class="kpi-title">Students Needing Attention</div><div class="kpi-value" style="color: #b91c1c !important;">{at_risk_count}</div><div class="kpi-sub">Priority Support Group</div></div>
     </div>
 """,
     unsafe_allow_html=True,
 )
 
-tab1, tab2, tab3 = st.tabs(
+tab1, tab2, tab3, tab4 = st.tabs(
     [
         "📊 Student Overview & Recommendations",
-        "🔍 Explainability & Responsible Use",
-        "💬 AI Academic Chatbot (Q&A & Study Plans)",
+        "🔍 Performance Insights & Responsible Use",
+        "💬 Academic Advisor Assistant",
+        "⚙️ System Technicalities & Functionalities",
     ]
 )
 
@@ -378,8 +400,8 @@ with tab1:
         <div class="kpi-container">
             <div class="kpi-card"><div class="kpi-title">Overall Score</div><div class="kpi-value">{s_row['Composite_Score']}/100</div><div class="kpi-sub">Grade {s_row['Grade']}</div></div>
             <div class="kpi-card"><div class="kpi-title">Attendance</div><div class="kpi-value">{s_row['attendance']}%</div><div class="kpi-sub">Trend: {s_row['Performance_Trend']}</div></div>
-            <div class="kpi-card"><div class="kpi-title">ML Risk Probability</div><div class="kpi-value">{s_row['Risk_Prob']:.2f}</div><div class="kpi-sub">{rec_data['status']}</div></div>
-            <div class="kpi-card"><div class="kpi-title">Top Priority Subject</div><div class="kpi-value" style="font-size: 18px !important; margin-top: 4px;">{top_subj}</div><div class="kpi-sub">Immediate Remediation</div></div>
+            <div class="kpi-card"><div class="kpi-title">Support Need Index</div><div class="kpi-value">{s_row['Risk_Prob']:.2f}</div><div class="kpi-sub">{rec_data['status']}</div></div>
+            <div class="kpi-card"><div class="kpi-title">Top Priority Subject</div><div class="kpi-value" style="font-size: 18px !important; margin-top: 4px;">{top_subj}</div><div class="kpi-sub">Immediate Focus Area</div></div>
         </div>
     """,
         unsafe_allow_html=True,
@@ -397,6 +419,7 @@ with tab1:
             text="Composite_Score",
             color="attendance",
             color_continuous_scale="Blues",
+            labels={"Composite_Score": "Overall Subject Score", "subject": "Subject"},
         )
         fig_subj.update_layout(
             plot_bgcolor="#ffffff",
@@ -408,13 +431,13 @@ with tab1:
         st.plotly_chart(fig_subj, use_container_width=True)
 
     with col_right:
-        st.markdown("**Assessment Trend Chart**")
+        st.markdown("**Assessment Progress Chart**")
         stages = ["quiz_avg", "assignment_avg", "Midsem", "Comprehensive marks"]
         fig_trend = go.Figure()
         for _, r in s_subjs.iterrows():
             fig_trend.add_trace(
                 go.Scatter(
-                    x=["Quiz", "Assignment", "Midsem", "Comprehensive"],
+                    x=["Quiz", "Assignment", "Mid-Semester", "Comprehensive"],
                     y=[r[st_col] for st_col in stages],
                     mode="lines+markers",
                     name=r["subject"],
@@ -431,12 +454,13 @@ with tab1:
         )
         st.plotly_chart(fig_trend, use_container_width=True)
 
-    st.subheader("Recommendation Engine Output (Slide 8 Standards)")
+    st.subheader("Personalized Recommendations")
+    st.caption("Guidance is generated directly from actual academic records.")
     for rule in rec_data["rules_triggered"]:
         st.markdown(f"<div class='rule-box'>{rule}</div>", unsafe_allow_html=True)
 
     if rec_data["study_plan"]:
-        st.markdown("**Personalized Weekly Study Schedule:**")
+        st.markdown("**Weekly Study Schedule:**")
         st.table(
             pd.DataFrame(
                 list(rec_data["study_plan"].items()),
@@ -444,14 +468,19 @@ with tab1:
             )
         )
 
+    st.markdown(
+        "<div class='disclaimer-box'><strong>Advisory Note:</strong> Automated assessments combine subject scores, recent score trends, attendance, and coursework completion to highlight areas needing attention.</div>",
+        unsafe_allow_html=True,
+    )
+
 with tab2:
-    st.subheader("Model Verification & Explainable AI (XAI)")
+    st.subheader("System Reliability & Key Performance Drivers")
     st.markdown(
         f"""
         <div class="kpi-container">
-            <div class="kpi-card"><div class="kpi-title">Precision</div><div class="kpi-value">{model_metrics['Precision']*100:.1f}%</div><div class="kpi-sub">Verification Metric</div></div>
-            <div class="kpi-card"><div class="kpi-title">Recall</div><div class="kpi-value">{model_metrics['Recall']*100:.1f}%</div><div class="kpi-sub">Verification Metric</div></div>
-            <div class="kpi-card"><div class="kpi-title">F1-Score</div><div class="kpi-value">{model_metrics['F1-Score']*100:.1f}%</div><div class="kpi-sub">Verification Metric</div></div>
+            <div class="kpi-card"><div class="kpi-title">Alert Accuracy</div><div class="kpi-value">{model_metrics['Precision']*100:.1f}%</div><div class="kpi-sub">Reliability Score</div></div>
+            <div class="kpi-card"><div class="kpi-title">Detection Coverage</div><div class="kpi-value">{model_metrics['Recall']*100:.1f}%</div><div class="kpi-sub">Reliability Score</div></div>
+            <div class="kpi-card"><div class="kpi-title">Overall Consistency</div><div class="kpi-value">{model_metrics['F1-Score']*100:.1f}%</div><div class="kpi-sub">Reliability Score</div></div>
         </div>
     """,
         unsafe_allow_html=True,
@@ -459,16 +488,22 @@ with tab2:
 
     c_left, c_right = st.columns(2)
     with c_left:
-        st.markdown(f"**Local Explanation for {selected_student_id} (SHAP-Style)**")
-        local_exp_df = compute_local_explainability(s_row, agg_df, feature_cols, rf_model)
+        st.markdown(f"**Individual Factor Breakdown for {selected_student_id}**")
+        st.caption(
+            "Red bars indicate factors increasing support need; green bars indicate strengths relative to cohort average."
+        )
+        local_exp_df = compute_local_explainability(
+            s_row, agg_df, feature_cols, rf_model, friendly_names
+        )
         fig_local = px.bar(
             local_exp_df,
-            x="Risk_Contribution",
-            y="Feature",
+            x="Risk_Impact",
+            y="Factor",
             orientation="h",
-            text="Risk_Contribution",
-            color=local_exp_df["Risk_Contribution"] > 0,
+            text="Risk_Impact",
+            color=local_exp_df["Risk_Impact"] > 0,
             color_discrete_map={True: "#b91c1c", False: "#15803d"},
+            labels={"Risk_Impact": "Impact on Support Need", "Factor": "Academic Factor"},
         )
         fig_local.update_layout(
             showlegend=False,
@@ -480,14 +515,16 @@ with tab2:
         st.plotly_chart(fig_local, use_container_width=True)
 
     with c_right:
-        st.markdown("**Global Feature Importance**")
+        st.markdown("**Overall Academic Factors Across All Students**")
+        st.caption("Relative weight of each academic metric across the full student cohort.")
         fig_imp = px.bar(
             feat_imp_df,
-            x="Importance",
-            y="Feature",
+            x="Influence",
+            y="Factor",
             orientation="h",
-            text=feat_imp_df["Importance"].round(3),
+            text=feat_imp_df["Influence"].round(3),
             color_discrete_sequence=["#1e3a8a"],
+            labels={"Influence": "Relative Weight", "Factor": "Academic Factor"},
         )
         fig_imp.update_layout(
             plot_bgcolor="#ffffff",
@@ -497,13 +534,28 @@ with tab2:
         )
         st.plotly_chart(fig_imp, use_container_width=True)
 
+    st.subheader("Transparency & Responsible Use Guidelines")
+    st.markdown(
+        """
+        - **Clear Explanations:** Students and advisors can see exactly which academic metrics contributed to a support alert.
+        - **Primary Drivers:** Recent assessment trends, attendance percentages, and exam scores carry the strongest influence.
+        - **Context Over Correlation:** Statistical patterns highlight where academic support is helpful—they do not assume root causes.
+        - **Privacy Protection:** Student identities remain strictly anonymized using unique student IDs.
+        - **Data Completeness:** Incomplete records are flagged for manual advisor review rather than automated scoring.
+    """
+    )
+
 with tab3:
-    st.subheader("AI Academic Advisor Chatbot")
+    st.subheader("Academic Advisor Assistant")
+    st.markdown(
+        "Ask questions about **recommendations for students needing support**, **cohort study schedules**, or query an individual student ID (e.g., `S001`, `S015`)."
+    )
+
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = [
             {
                 "role": "assistant",
-                "content": "Hello! I am the **AI Student Performance Advisor Chatbot**. Ask me about recommendations or study plans.",
+                "content": "Hello! I am your **Academic Advisor Assistant**. Ask me for recommendations for students needing support, a cohort-wide study plan, or a personalized plan for any Student ID (e.g., `S004`).",
             }
         ]
     for msg in st.session_state.chat_history:
@@ -519,3 +571,46 @@ with tab3:
         st.session_state.chat_history.append({"role": "assistant", "content": bot_reply})
         with st.chat_message("assistant"):
             st.markdown(bot_reply)
+
+with tab4:
+    st.subheader("⚙️ System Technicalities & Functionalities Architecture")
+    st.markdown(
+        "This tab outlines the backend data structures, machine learning engine workflows, feature engineering formulas, and decision rule logic powering the system."
+    )
+
+    st.markdown(
+        """
+        <div class="tech-box">
+            <h4>1. Dataset Ingestion & Schema Structure</h4>
+            <p><strong>Source File:</strong> <code>Subject_Analytics_Dataset_500_Students-v2.xlsx</code> (Multi-subject records across 500 unique students).</p>
+            <p><strong>Attributes Tracked:</strong> Student ID, Department, Subject Name, Attendance %, Quiz Average, Assignment Average, Mid-Semester Marks, Comprehensive Examination Marks, Previous Term Average, Recent Assessment Average, and Missed Assessments.</p>
+        </div>
+
+        <div class="tech-box">
+            <h4>2. Dynamic Feature Engineering & Data Reliability</h4>
+            <p><strong>Composite Score Calculation:</strong><br>
+            <code>Composite Score = (0.10 × Quiz) + (0.15 × Assignment) + (0.25 × Mid-Sem) + (0.35 × Comprehensive) + (0.15 × Previous Avg)</code></p>
+            <p><strong>Performance Trajectory (Trend Delta):</strong><br>
+            Computed via <code>Recent Average - Previous Average</code>. Categorized dynamically as <em>Improving</em> (>+2), <em>Declining</em> (<-3), or <em>Stable</em>.</p>
+            <p><strong>Data Reliability Verification:</strong><br>
+            Automated validation checks ensure attendance percentages fall between 0–100% and no mandatory assessment records are missing. Incomplete records trigger an <em>Insufficient Evidence / Needs Review</em> flag.</p>
+        </div>
+
+        <div class="tech-box">
+            <h4>3. Machine Learning & Predictive Engine Architecture</h4>
+            <p><strong>Target Variable Definition:</strong> Binary risk classification (<code>0</code> = Stable/On Track, <code>1</code> = Requires Academic Attention) derived from composite thresholds (<58%), attendance (<72%), or missed milestones (≥3).</p>
+            <p><strong>Baseline Model:</strong> <code>LogisticRegression</code> (max_iter=1000) for linear baseline probability benchmarking.</p>
+            <p><strong>Primary Model:</strong> <code>RandomForestClassifier</code> (n_estimators=120) capturing non-linear interactions across attendance, continuous evaluation scores, and assessment trajectories.</p>
+            <p><strong>Evaluation Metrics:</strong> Precision, Recall, and F1-Score computed on a stratified 75/25 train-test split.</p>
+        </div>
+
+        <div class="tech-box">
+            <h4>4. Recommendation & Chatbot NLP Engine Logic</h4>
+            <p><strong>Priority Scoring Formula:</strong><br>
+            <code>Priority Score = (100 - Composite Score) + (15 if Attendance < 75% else 0)</code></p>
+            <p><strong>Rule-Based Advisory Engine:</strong> Matches student performance patterns against institutional criteria to generate tailored remediation schedules and subject priority orders.</p>
+            <p><strong>Conversational NLP Interface:</strong> Utilizes regex pattern matching to parse student IDs (e.g., <code>S001</code>) and keyword queries (e.g., "study plan", "poor students"), extracting live Pandas dataframe records instantly.</p>
+        </div>
+    """,
+        unsafe_allow_html=True,
+    )
