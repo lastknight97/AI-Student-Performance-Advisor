@@ -128,7 +128,9 @@ def load_and_prepare_data(file_path="Subject_Analytics_Dataset_500_Students-v2.x
 
     df["Trend_Delta"] = (df["recent_avg"] - df["previous_avg"]).round(1)
     df["Performance_Trend"] = np.where(
-        df["Trend_Delta"] > 2, "Improving", np.where(df["Trend_Delta"] < -3, "Declining", "Stable")
+        df["Trend_Delta"] >= 1.0,
+        "Improving",
+        np.where(df["Trend_Delta"] <= -4.0, "Declining", "Stable"),
     )
 
     agg_df = (
@@ -151,7 +153,9 @@ def load_and_prepare_data(file_path="Subject_Analytics_Dataset_500_Students-v2.x
     )
 
     agg_df["Performance_Trend"] = np.where(
-        agg_df["Trend_Delta"] > 2, "Improving", np.where(agg_df["Trend_Delta"] < -3, "Declining", "Stable")
+        agg_df["Trend_Delta"] >= 1.0,
+        "Improving",
+        np.where(agg_df["Trend_Delta"] <= -4.0, "Declining", "Stable"),
     )
     agg_df["Risk_Target"] = np.where(
         (agg_df["Composite_Score"] < 58)
@@ -268,24 +272,28 @@ def generate_student_recommendations(student_row, subject_rows):
             "study_plan": {},
         }
     subj_df = subject_rows.copy()
+    # Balanced priority score: prioritizes low composite scores AND severely low attendance (<75%)
     subj_df["Priority_Score"] = (100 - subj_df["Composite_Score"]) + np.where(
-        subj_df["attendance"] < 75, 15, 0
+        subj_df["attendance"] < 75,
+        np.maximum(0, (75 - subj_df["attendance"]) * 0.8),
+        0,
     )
     subj_df = subj_df.sort_values("Priority_Score", ascending=False)
     priority_subjects = subj_df["subject"].tolist()
     rules_triggered = []
     for _, s_row in subj_df.iterrows():
-        if (
-            s_row["Composite_Score"] < 60
-            and s_row["Performance_Trend"] == "Declining"
-            and s_row["attendance"] < 75
-        ):
+        if s_row["Composite_Score"] < 60 and s_row["attendance"] < 75:
             rules_triggered.append(
-                f'Advisor Guidance: "{s_row["subject"]} currently requires additional attention. Your recent scores are declining (Mid-Semester: {s_row["Midsem"]} → Comprehensive: {s_row["Comprehensive marks"]}, Average: {s_row["Composite_Score"]}%) and attendance is below the target threshold ({s_row["attendance"]}%). Review recent assessment topics and prioritize the upcoming {s_row["subject"]} evaluation."'
+                f'Advisor Guidance: "{s_row["subject"]} requires attention due to a composite score of {s_row["Composite_Score"]}% and attendance of {s_row["attendance"]}%." '
+                f"Review recent assessment topics and prioritize upcoming coursework."
             )
         elif s_row["Composite_Score"] < 60:
             rules_triggered.append(
                 f'Advisor Guidance: "{s_row["subject"]} average is {s_row["Composite_Score"]}%. Review recent assessment topics and prioritize upcoming coursework."'
+            )
+        elif s_row["attendance"] < 75:
+            rules_triggered.append(
+                f'Advisor Guidance: "{s_row["subject"]} attendance is currently {s_row["attendance"]}%. Ensure regular attendance in upcoming lectures."'
             )
     if not rules_triggered:
         rules_triggered.append(
@@ -294,7 +302,7 @@ def generate_student_recommendations(student_row, subject_rows):
     top_subj = priority_subjects[0] if len(priority_subjects) > 0 else "Core Subject"
     sec_subj = priority_subjects[1] if len(priority_subjects) > 1 else top_subj
     study_plan = {
-        "Monday – Tuesday (Primary Focus)": f"Dedicate 2 hrs/day to **{top_subj}** (top priority). Review recent lecture notes and practice past exam questions.",
+        "Monday – Tuesday (Primary Focus)": f"Dedicate 2 hrs/day on **{top_subj}** (top priority). Review recent lecture notes and practice past exam questions.",
         "Wednesday – Thursday (Secondary Reinforcement)": f"Spend 1.5 hrs/day on **{sec_subj}** and complete upcoming assignments ahead of deadlines.",
         "Friday (Self-Assessment & Quizzes)": "Take 1 timed practice quiz (45 mins) covering challenging topics and review mistakes.",
         "Weekend (Weekly Consolidation)": "Summarize key concepts (1 hr) and preview next week's syllabus to prepare for classes.",
@@ -598,7 +606,7 @@ with tab4:
             <p><strong>Composite Score Calculation:</strong><br>
             <code>Composite Score = (0.10 × Quiz) + (0.15 × Assignment) + (0.25 × Mid-Sem) + (0.35 × Comprehensive) + (0.15 × Previous Avg)</code></p>
             <p><strong>Performance Trajectory (Trend Delta):</strong><br>
-            Computed via <code>Recent Average - Previous Average</code>. Categorized dynamically as <em>Improving</em> (>+2), <em>Declining</em> (<-3), or <em>Stable</em>.</p>
+            Computed via <code>Recent Average - Previous Average</code>. Categorized dynamically as <em>Improving</em> (≥+1.0), <em>Declining</em> (≤-4.0), or <em>Stable</em>.</p>
             <p><strong>Data Reliability Verification:</strong><br>
             Automated validation checks ensure attendance percentages fall between 0–100% and no mandatory assessment records are missing. Incomplete records trigger an <em>Insufficient Evidence / Needs Review</em> flag.</p>
         </div>
@@ -614,7 +622,7 @@ with tab4:
         <div class="tech-box">
             <h4>4. Recommendation & Chatbot NLP Engine Logic</h4>
             <p><strong>Priority Scoring Formula:</strong><br>
-            <code>Priority Score = (100 - Composite Score) + (15 if Attendance < 75% else 0)</code></p>
+            <code>Priority Score = (100 - Composite Score) + Attendance Penalty (<75%)</code></p>
             <p><strong>Rule-Based Advisory Engine:</strong> Matches student performance patterns against institutional criteria to generate tailored remediation schedules and subject priority orders.</p>
             <p><strong>Conversational NLP Interface:</strong> Utilizes regex pattern matching to parse student IDs (e.g., <code>S001</code>) and keyword queries (e.g., "study plan", "poor students"), extracting live Pandas dataframe records instantly.</p>
         </div>
