@@ -653,18 +653,27 @@ with tab5:
     )
 
     cm = model_metrics["Confusion_Matrix"]
-    
+
     col_cm1, col_cm2 = st.columns(2)
     with col_cm1:
         st.markdown("**Confusion Matrix Visualization**")
-        st.caption("Rows represent Actual labels (0 = On Track, 1 = Needs Support), Columns represent Model Predictions.")
-        
-        # Create interactive confusion matrix using plotly figure factory
+        st.caption(
+            "Rows represent Actual labels (0 = On Track, 1 = Needs Support), Columns represent Model Predictions."
+        )
+
         z = cm.tolist()
-        x = ["Predicted: On Track (0)", "Predicted: Support (1)"]
-        y = ["Actual: On Track (0)", "Actual: Support (1)"]
-        
-        fig_cm = ff.create_annotated_heatmap(z, x=x, y=y, colorscale="Blues", showscale=True)
+        x_labels = ["Predicted: On Track (0)", "Predicted: Support (1)"]
+        y_labels = ["Actual: On Track (0)", "Actual: Support (1)"]
+
+        # Using px.imshow with text_auto=True is 100% reliable across all Streamlit & Plotly environments
+        fig_cm = px.imshow(
+            z,
+            x=x_labels,
+            y=y_labels,
+            color_continuous_scale="Blues",
+            text_auto=True,
+            labels=dict(x="Predicted Label", y="Actual Label", color="Count"),
+        )
         fig_cm.update_layout(
             plot_bgcolor="#ffffff",
             paper_bgcolor="#ffffff",
