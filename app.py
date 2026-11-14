@@ -13,7 +13,7 @@ st.set_page_config(
     page_title="AI-Based Student Performance Advisor",
     page_icon="🎓",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 st.markdown(
@@ -294,7 +294,7 @@ def generate_student_recommendations(student_row, subject_rows):
     top_subj = priority_subjects[0] if len(priority_subjects) > 0 else "Core Subject"
     sec_subj = priority_subjects[1] if len(priority_subjects) > 1 else top_subj
     study_plan = {
-        "Monday – Tuesday (Primary Focus)": f"Dedicate 2 hrs/day on **{top_subj}** (top priority). Review recent lecture notes and practice past exam questions.",
+        "Monday – Tuesday (Primary Focus)": f"Dedicate 2 hrs/day to **{top_subj}** (top priority). Review recent lecture notes and practice past exam questions.",
         "Wednesday – Thursday (Secondary Reinforcement)": f"Spend 1.5 hrs/day on **{sec_subj}** and complete upcoming assignments ahead of deadlines.",
         "Friday (Self-Assessment & Quizzes)": "Take 1 timed practice quiz (45 mins) covering challenging topics and review mistakes.",
         "Weekend (Weekly Consolidation)": "Summarize key concepts (1 hr) and preview next week's syllabus to prepare for classes.",
@@ -345,20 +345,27 @@ rf_model, lr_model, risk_probs, model_metrics, feat_imp_df, feature_cols, friend
 )
 agg_df["Risk_Prob"] = risk_probs.round(3)
 
-st.sidebar.title("🎓 Cohort & Student Filters")
-dept_options = ["All Departments"] + sorted(agg_df["department"].unique().tolist())
-selected_dept = st.sidebar.selectbox("Department", dept_options)
-filtered_agg = (
-    agg_df if selected_dept == "All Departments" else agg_df[agg_df["department"] == selected_dept]
-)
-selected_student_id = st.sidebar.selectbox(
-    "Select Student ID", filtered_agg["student_id"].tolist()
-)
-
 st.title("AI-Based Student Performance Advisor and Visualization System")
 st.markdown(
     "Unified academic monitoring, data-driven study recommendations, performance factor insights, and interactive advisory assistant."
 )
+
+# Main Dashboard Cohort & Student Filters
+f_col1, f_col2 = st.columns(2)
+with f_col1:
+    dept_options = ["All Departments"] + sorted(agg_df["department"].unique().tolist())
+    selected_dept = st.selectbox("Filter by Department", dept_options)
+
+filtered_agg = (
+    agg_df if selected_dept == "All Departments" else agg_df[agg_df["department"] == selected_dept]
+)
+
+with f_col2:
+    selected_student_id = st.selectbox(
+        "Select Student ID", filtered_agg["student_id"].tolist()
+    )
+
+st.markdown("<br>", unsafe_allow_html=True)
 
 at_risk_count = int((filtered_agg["Risk_Prob"] >= 0.5).sum())
 cohort_avg_score = f"{filtered_agg['Composite_Score'].mean():.1f}%"
